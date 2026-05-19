@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#16213e"/>
+  <circle cx="256" cy="230" r="100" fill="#e94560" stroke="#fff" stroke-width="12"/>
+  <circle cx="256" cy="230" r="50" fill="#fff"/>
+  <rect x="230" y="310" width="52" height="120" rx="8" fill="#e94560"/>
+  <text x="256" y="470" text-anchor="middle" font-family="sans-serif" font-size="80" font-weight="bold" fill="#e0e0e0">MAP</text>
+</svg>
