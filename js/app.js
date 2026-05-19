@@ -12,6 +12,9 @@ let currentFilter = 'all';
 let nextId = 1;
 let blockMapClick = false;
 let isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+let locationMarker = null;
+let locationCircle = null;
+let isTracking = false;
 
 function setBlockMapClick() {
   blockMapClick = true;
@@ -238,6 +241,36 @@ function initMap() {
 
   map.on('moveend zoomend', saveSettings);
 
+  map.on('locationfound', function(e) {
+    if (locationMarker) map.removeLayer(locationMarker);
+    if (locationCircle) map.removeLayer(locationCircle);
+    const radius = e.accuracy / 2;
+    locationMarker = L.circleMarker(e.latlng, {
+      radius: 8,
+      fillColor: '#3498db',
+      fillOpacity: 1,
+      color: '#fff',
+      weight: 3
+    });
+    locationCircle = L.circle(e.latlng, {
+      radius: radius,
+      color: '#3498db',
+      fillColor: '#3498db',
+      fillOpacity: 0.15,
+      weight: 2
+    });
+    if (isTracking) {
+      locationMarker.addTo(map);
+      locationCircle.addTo(map);
+    }
+  });
+
+  map.on('locationerror', function() {
+    alert('Не удалось определить местоположение. Проверьте, включена ли геолокация на устройстве.');
+    const btn = document.getElementById('btn-locate');
+    stopLocating(btn);
+  });
+
   loadBuildings();
   buildings.forEach(b => {
     if (b.status === undefined) b.status = 'pending';
@@ -376,5 +409,27 @@ setInterval(refreshAllMarkers, 60000);
 document.getElementById('sidebar-toggle').addEventListener('click', openSidebar);
 document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
 document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+
+document.getElementById('btn-locate').addEventListener('click', function() {
+  const btn = this;
+  if (isTracking) {
+    stopLocating(btn);
+    return;
+  }
+  if (!map) return;
+  map.locate({ setView: true, maxZoom: 17, watch: true, enableHighAccuracy: true });
+  btn.classList.add('tracking');
+  btn.textContent = '\u2715';
+  isTracking = true;
+});
+
+function stopLocating(btn) {
+  map.stopLocate();
+  if (locationMarker) { map.removeLayer(locationMarker); locationMarker = null; }
+  if (locationCircle) { map.removeLayer(locationCircle); locationCircle = null; }
+  isTracking = false;
+  btn.classList.remove('tracking');
+  btn.textContent = '\u2316';
+}
 
 initMap();

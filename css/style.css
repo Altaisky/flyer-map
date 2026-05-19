@@ -14,11 +14,9 @@ body {
   overflow: hidden;
 }
 
-#sidebar-toggle {
+#sidebar-toggle, #btn-locate {
   display: none;
   position: fixed;
-  top: 12px;
-  left: 12px;
   z-index: 1001;
   width: 44px;
   height: 44px;
@@ -31,6 +29,21 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+
+#sidebar-toggle {
+  top: 12px;
+  left: 12px;
+}
+
+#btn-locate {
+  top: 12px;
+  right: 12px;
+}
+
+#btn-locate.tracking {
+  background: #e94560ee;
+  color: #fff;
 }
 
 #sidebar-overlay {
@@ -328,7 +341,7 @@ input[type="number"]:focus {
 .marker-excluded { background: #7f8c8d; }
 
 @media (max-width: 768px) {
-  #sidebar-toggle {
+  #sidebar-toggle, #btn-locate {
     display: block;
   }
 
