@@ -121,6 +121,9 @@ function getPopupContent(building) {
   if (remaining) {
     html += `<div class="timer">${remaining}</div>`;
   }
+
+  html += `<a class="popup-btn popup-btn-nav" href="geo:${building.lat},${building.lng}" target="_blank">Навигация</a>`;
+
   html += `<div class="popup-actions">`;
 
   const showGlue = status === 'pending' || status === 'expired';
