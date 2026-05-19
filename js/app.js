@@ -16,6 +16,37 @@ let locationMarker = null;
 let locationCircle = null;
 let isTracking = false;
 
+function reverseGeocode(lat, lng, callback) {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ru`);
+  xhr.setRequestHeader('User-Agent', 'FlyerMap-PWA/1.0');
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        callback(data);
+      } catch (e) {
+        callback(null);
+      }
+    } else {
+      callback(null);
+    }
+  };
+  xhr.onerror = function() { callback(null); };
+  xhr.send();
+}
+
+function formatAddress(data) {
+  if (!data || !data.address) return null;
+  const a = data.address;
+  const street = a.road || a.footway || a.pedestrian || a.path || '';
+  const house = a.house_number || '';
+  if (street && house) return `${street}, ${house}`;
+  if (street) return street;
+  if (house) return `Дом ${house}`;
+  return data.display_name ? data.display_name.split(',')[0] : null;
+}
+
 function setBlockMapClick() {
   blockMapClick = true;
   setTimeout(() => { blockMapClick = false; }, 100);
@@ -117,6 +148,11 @@ function getPopupContent(building) {
 
   let html = `<div class="popup-content">`;
   html += `<h3>Дом #${building.id}</h3>`;
+  if (building.address) {
+    html += `<div class="building-address">${building.address}</div>`;
+  } else if (!building.addressFetching) {
+    html += `<div class="building-address loading">Загрузка адреса...</div>`;
+  }
   html += `<span class="status status-${status}">${statusLabels[status]}</span>`;
   if (markedDate) {
     html += `<div class="timer">Обклеен: ${markedDate}</div>`;
@@ -228,6 +264,7 @@ function initMap() {
       lng: Math.round(e.latlng.lng * 1000000) / 1000000,
       status: 'pending',
       excluded: false,
+      address: null,
       lastMarkedAt: null,
       createdAt: new Date().toISOString()
     };
@@ -237,6 +274,14 @@ function initMap() {
     saveBuildings();
     updateStats();
     markers[building.id].openPopup();
+
+    building.addressFetching = true;
+    reverseGeocode(building.lat, building.lng, function(data) {
+      building.address = formatAddress(data);
+      building.addressFetching = false;
+      refreshMarker(building);
+      saveBuildings();
+    });
   });
 
   map.on('moveend zoomend', saveSettings);
@@ -275,8 +320,20 @@ function initMap() {
   buildings.forEach(b => {
     if (b.status === undefined) b.status = 'pending';
     if (b.excluded === undefined) b.excluded = false;
+    if (b.address === undefined) b.address = null;
   });
-  buildings.forEach(b => addMarkerToMap(b));
+  buildings.forEach(function(b) {
+    addMarkerToMap(b);
+    if (!b.address && !b.addressFetching) {
+      b.addressFetching = true;
+      reverseGeocode(b.lat, b.lng, function(data) {
+        b.address = formatAddress(data);
+        b.addressFetching = false;
+        refreshMarker(b);
+        saveBuildings();
+      });
+    }
+  });
   refreshAllMarkers();
 }
 
