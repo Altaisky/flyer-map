@@ -1,19 +1,24 @@
 const CACHE_NAME = 'flyer-map-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-];
+
+function getBaseUrl() {
+  return self.location.pathname.replace(/\/sw\.js$/, '');
+}
 
 self.addEventListener('install', event => {
+  const base = getBaseUrl();
+  const assets = [
+    `${base}/`,
+    `${base}/index.html`,
+    `${base}/css/style.css`,
+    `${base}/js/app.js`,
+    `${base}/manifest.json`,
+    `${base}/icons/icon-192.png`,
+    `${base}/icons/icon-512.png`,
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+  ];
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(assets))
   );
   self.skipWaiting();
 });
@@ -39,7 +44,8 @@ self.addEventListener('fetch', event => {
       });
     }).catch(() => {
       if (event.request.destination === 'document') {
-        return caches.match('/index.html');
+        const base = getBaseUrl();
+        return caches.match(`${base}/index.html`);
       }
     })
   );

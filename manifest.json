@@ -2,7 +2,7 @@
   "name": "Обклейка домов",
   "short_name": "Обклейка",
   "description": "Отслеживание расклейки объявлений на карте города",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#1a1a2e",
   "theme_color": "#16213e",
