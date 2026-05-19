@@ -87,6 +87,15 @@ body {
   gap: 8px;
 }
 
+.version {
+  font-size: 10px;
+  color: #707090;
+  background: #0f3460;
+  padding: 1px 6px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
 #sidebar h1 {
   font-size: 18px;
   color: #e94560;
