@@ -246,6 +246,7 @@ function initMap() {
   }).addTo(map);
 
   document.getElementById('cooldown-days').value = settings.cooldownDays;
+  updatePresetButtons();
 
   map.on('click', function(e) {
     if (blockMapClick) {
@@ -394,7 +395,26 @@ window.deleteBuilding = function(id) {
 document.getElementById('cooldown-days').addEventListener('change', function() {
   saveSettings();
   refreshAllMarkers();
+  updatePresetButtons();
 });
+
+document.querySelectorAll('.btn-preset').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const days = this.dataset.days;
+    document.getElementById('cooldown-days').value = days;
+    document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    saveSettings();
+    refreshAllMarkers();
+  });
+});
+
+function updatePresetButtons() {
+  const current = document.getElementById('cooldown-days').value;
+  document.querySelectorAll('.btn-preset').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.days === current);
+  });
+}
 
 document.querySelectorAll('.btn-filter').forEach(btn => {
   btn.addEventListener('click', function() {
@@ -444,6 +464,7 @@ document.getElementById('file-import').addEventListener('change', function(e) {
         if (data.settings && data.settings.cooldownDays) {
           document.getElementById('cooldown-days').value = data.settings.cooldownDays;
         }
+        updatePresetButtons();
         saveBuildings();
         saveSettings();
         refreshAllMarkers();

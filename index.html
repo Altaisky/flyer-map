@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>Обклейка домов</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/style.css?v=5" />
+  <link rel="stylesheet" href="css/style.css?v=6" />
 </head>
 <body>
   <button id="sidebar-toggle">&#9776;</button>
@@ -19,7 +19,7 @@
   <div id="sidebar">
     <div id="sidebar-header">
       <h1>📋 Обклейка домов</h1>
-      <span class="version">v5</span>
+      <span class="version">v6</span>
       <button id="sidebar-close">&times;</button>
     </div>
 
@@ -58,6 +58,13 @@
         Период паузы (дней):
         <input type="number" id="cooldown-days" value="30" min="1" max="365" />
       </label>
+      <div class="preset-buttons">
+        <button class="btn-preset" data-days="1">1</button>
+        <button class="btn-preset" data-days="3">3</button>
+        <button class="btn-preset" data-days="7">7</button>
+        <button class="btn-preset" data-days="14">14</button>
+        <button class="btn-preset active" data-days="30">30</button>
+      </div>
     </div>
 
     <div class="section">
@@ -89,7 +96,7 @@
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/app.js?v=6"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
