@@ -259,10 +259,10 @@ input[type="number"]:focus {
 }
 
 .leaflet-popup-close-button {
-  width: 32px !important;
-  height: 32px !important;
-  font-size: 22px !important;
-  line-height: 32px !important;
+  width: 40px !important;
+  height: 40px !important;
+  font-size: 28px !important;
+  line-height: 40px !important;
   top: 4px !important;
   right: 4px !important;
 }
