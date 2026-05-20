@@ -137,8 +137,8 @@ body {
 
 .dot-pending { background: #3498db; }
 .dot-planned { background: #f39c12; }
-.dot-active { background: #e94560; }
-.dot-expired { background: #2ecc71; }
+.dot-active { background: #2ecc71; }
+.dot-expired { background: #f39c12; }
 .dot-excluded { background: #7f8c8d; }
 
 label {
@@ -308,13 +308,13 @@ input[type="number"]:focus {
 }
 
 .status-active {
-  background: #e9456033;
-  color: #e94560;
+  background: #2ecc7133;
+  color: #2ecc71;
 }
 
 .status-expired {
-  background: #2ecc7133;
-  color: #2ecc71;
+  background: #f39c1233;
+  color: #f39c12;
 }
 
 .status-excluded {
@@ -376,8 +376,8 @@ input[type="number"]:focus {
 
 .marker-pending { background: #3498db; }
 .marker-planned { background: #f39c12; }
-.marker-active { background: #e94560; }
-.marker-expired { background: #2ecc71; }
+.marker-active { background: #2ecc71; }
+.marker-expired { background: #f39c12; }
 .marker-excluded { background: #7f8c8d; }
 
 @media (max-width: 768px) {
