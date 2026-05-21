@@ -250,8 +250,10 @@ function initMap() {
     removeTempMarker();
     var lat = Math.round(e.latlng.lat * 1000000) / 1000000;
     var lng = Math.round(e.latlng.lng * 1000000) / 1000000;
+    var cls = 'marker-icon marker-temp';
+    if (tempComment) cls += ' marker-has-comment';
     var icon = L.divIcon({
-      className: 'marker-icon marker-temp',
+      className: cls,
       iconSize: [isMobile ? 32 : 24, isMobile ? 32 : 24],
       iconAnchor: [isMobile ? 16 : 12, isMobile ? 16 : 12],
       popupAnchor: [0, isMobile ? -16 : -12]
@@ -264,7 +266,13 @@ function initMap() {
   map.on('popupclose', function() {
     if (tempMarker) {
       setTimeout(function() {
-        removeTempMarker();
+        if (tempComment) {
+          var lat = tempMarker.getLatLng().lat;
+          var lng = tempMarker.getLatLng().lng;
+          confirmNewBuilding(lat, lng, 'planned');
+        } else {
+          removeTempMarker();
+        }
       }, 50);
     }
   });
@@ -423,6 +431,15 @@ window.addTempComment = function() {
   if (text === null) return;
   tempComment = text.trim() || null;
   if (tempMarker) {
+    var cls = 'marker-icon marker-temp';
+    if (tempComment) cls += ' marker-has-comment';
+    var size = isMobile ? 32 : 24;
+    tempMarker.setIcon(L.divIcon({
+      className: cls,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -size / 2]
+    }));
     tempMarker.setPopupContent(getChoicePopupContent(
       tempMarker.getLatLng().lat, tempMarker.getLatLng().lng
     ));
