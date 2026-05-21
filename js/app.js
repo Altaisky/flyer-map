@@ -327,6 +327,7 @@ function removeTempMarker() {
 
 window.confirmNewBuilding = function(lat, lng, status) {
   setBlockMapClick();
+  var comment = tempComment;
   removeTempMarker();
   map.closePopup();
 
@@ -340,7 +341,7 @@ window.confirmNewBuilding = function(lat, lng, status) {
     lastMarkedAt: status === 'done' ? new Date().toISOString() : null,
     address: null,
     addressFetching: false,
-    comment: tempComment,
+    comment: comment,
     createdAt: new Date().toISOString()
   };
   tempComment = null;
