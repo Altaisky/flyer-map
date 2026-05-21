@@ -16,6 +16,7 @@ let locationMarker = null;
 let locationCircle = null;
 let isTracking = false;
 let tempMarker = null;
+let tempComment = null;
 
 function reverseGeocode(lat, lng, callback) {
   const xhr = new XMLHttpRequest();
@@ -132,10 +133,14 @@ function createMarkerIcon(status, hasComment) {
 function getChoicePopupContent(lat, lng) {
   var h = '<div class="popup-content">';
   h += '<h3>Новый дом</h3>';
+  if (tempComment) {
+    h += '<div class="building-comment">' + tempComment.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
+  }
   h += '<div class="popup-actions">';
   h += '<button class="popup-btn popup-btn-mark" onclick="confirmNewBuilding(' + lat + ',' + lng + ',\'planned\')">Обклеить</button>';
   h += '<button class="popup-btn popup-btn-done" onclick="confirmNewBuilding(' + lat + ',' + lng + ',\'done\')">Обклеено</button>';
   h += '<button class="popup-btn popup-btn-exclude" onclick="confirmNewBuilding(' + lat + ',' + lng + ',\'excluded\')">Исключить</button>';
+  h += '<button class="popup-btn popup-btn-comment" onclick="addTempComment()">💬</button>';
   h += '</div></div>';
   return h;
 }
@@ -306,6 +311,7 @@ function removeTempMarker() {
   if (!tempMarker) return;
   map.removeLayer(tempMarker);
   tempMarker = null;
+  tempComment = null;
 }
 
 window.confirmNewBuilding = function(lat, lng, status) {
@@ -323,9 +329,10 @@ window.confirmNewBuilding = function(lat, lng, status) {
     lastMarkedAt: status === 'done' ? new Date().toISOString() : null,
     address: null,
     addressFetching: false,
-    comment: null,
+    comment: tempComment,
     createdAt: new Date().toISOString()
   };
+  tempComment = null;
 
   buildings.push(building);
   addMarkerToMap(building);
@@ -408,6 +415,18 @@ window.addComment = function(id) {
   building.comment = text.trim() || null;
   refreshMarker(building);
   saveBuildings();
+};
+
+window.addTempComment = function() {
+  setBlockMapClick();
+  var text = prompt('Комментарий', tempComment || '');
+  if (text === null) return;
+  tempComment = text.trim() || null;
+  if (tempMarker) {
+    tempMarker.setPopupContent(getChoicePopupContent(
+      tempMarker.getLatLng().lat, tempMarker.getLatLng().lng
+    ));
+  }
 };
 
 document.getElementById('cooldown-days').addEventListener('change', function() {

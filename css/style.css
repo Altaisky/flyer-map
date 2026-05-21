@@ -371,8 +371,17 @@ input[type="number"]:focus {
   opacity: 0.7;
 }
 
-.marker-has-comment {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 0 3px #fff !important;
+.marker-has-comment::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 10px;
+  height: 10px;
+  background: #ffd700;
+  border-radius: 50%;
+  border: 2px solid #1a1a2e;
+  box-shadow: 0 0 4px rgba(255,215,0,0.6);
 }
 
 .building-comment {
