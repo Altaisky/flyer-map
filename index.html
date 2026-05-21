@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>Обклейка домов</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/style.css?v=11" />
+  <link rel="stylesheet" href="css/style.css?v=12" />
 </head>
 <body>
   <button id="sidebar-toggle">&#9776;</button>
@@ -19,7 +19,7 @@
   <div id="sidebar">
     <div id="sidebar-header">
       <h1>📋 Обклейка домов</h1>
-      <span class="version">v11</span>
+      <span class="version">v12</span>
       <button id="sidebar-close">&times;</button>
     </div>
 
@@ -33,10 +33,6 @@
         <div class="stat-item">
           <span class="stat-dot dot-active"></span>
           <span>Обклеено: <strong id="count-active">0</strong></span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-dot dot-expired"></span>
-          <span>Готовы снова: <strong id="count-expired">0</strong></span>
         </div>
         <div class="stat-item">
           <span class="stat-dot dot-excluded"></span>
@@ -69,7 +65,6 @@
         <button class="btn-filter active" data-filter="all">Все</button>
         <button class="btn-filter" data-filter="planned">Обклеить</button>
         <button class="btn-filter" data-filter="active">Обклеено</button>
-        <button class="btn-filter" data-filter="expired">Готовы</button>
         <button class="btn-filter" data-filter="excluded">Исключены</button>
       </div>
     </div>
@@ -91,7 +86,7 @@
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/app.js?v=12"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });

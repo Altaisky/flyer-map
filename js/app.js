@@ -100,7 +100,7 @@ function getStatus(building) {
     const cd = building.cooldownDays || parseInt(document.getElementById('cooldown-days').value) || DEFAULT_COOLDOWN;
     const markedDate = new Date(building.lastMarkedAt);
     const expiryDate = new Date(markedDate.getTime() + cd * 24 * 60 * 60 * 1000);
-    return new Date() >= expiryDate ? 'expired' : 'active';
+    return new Date() >= expiryDate ? 'planned' : 'active';
   }
   return 'planned';
 }
@@ -141,7 +141,6 @@ function getPopupContent(building) {
   var statusLabels = {
     planned: 'Обклеить',
     active: 'Обклеено',
-    expired: 'Готов снова',
     excluded: 'Исключён'
   };
   var remaining = getRemainingText(building);
@@ -164,10 +163,9 @@ function getPopupContent(building) {
   html += '<div class="popup-actions">';
 
   if (status === 'planned') {
-    html += '<button class="popup-btn popup-btn-done" onclick="doneBuilding(' + building.id + ')">Обклеено</button>';
-    html += '<button class="popup-btn popup-btn-exclude" onclick="excludeBuilding(' + building.id + ')">Исключить</button>';
-  } else if (status === 'expired') {
-    html += '<button class="popup-btn popup-btn-mark" onclick="planBuilding(' + building.id + ')">Обклеить</button>';
+    if (building.status === 'done') {
+      html += '<button class="popup-btn popup-btn-mark" onclick="planBuilding(' + building.id + ')">Обклеить</button>';
+    }
     html += '<button class="popup-btn popup-btn-done" onclick="doneBuilding(' + building.id + ')">Обклеено</button>';
     html += '<button class="popup-btn popup-btn-exclude" onclick="excludeBuilding(' + building.id + ')">Исключить</button>';
   } else if (status === 'active') {
@@ -209,11 +207,10 @@ function applyFilterToMarker(building) {
 }
 
 function updateStats() {
-  var counts = { planned: 0, active: 0, expired: 0, excluded: 0 };
+  var counts = { planned: 0, active: 0, excluded: 0 };
   buildings.forEach(function(b) { counts[getStatus(b)]++; });
   document.getElementById('count-planned').textContent = counts.planned;
   document.getElementById('count-active').textContent = counts.active;
-  document.getElementById('count-expired').textContent = counts.expired;
   document.getElementById('count-excluded').textContent = counts.excluded;
   document.getElementById('count-total').textContent = buildings.length;
 }
