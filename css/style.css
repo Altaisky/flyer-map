@@ -380,6 +380,12 @@ input[type="number"]:focus {
 .marker-expired { background: #f39c12; }
 .marker-excluded { background: #7f8c8d; }
 
+.marker-temp {
+  background: #a0a0c0 !important;
+  border: 3px dashed #fff !important;
+  opacity: 0.7;
+}
+
 @media (max-width: 768px) {
   #sidebar-toggle, #btn-locate {
     display: block;

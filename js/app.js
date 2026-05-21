@@ -15,6 +15,7 @@ let isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 let locationMarker = null;
 let locationCircle = null;
 let isTracking = false;
+let tempMarker = null;
 
 function reverseGeocode(lat, lng, callback) {
   const xhr = new XMLHttpRequest();
@@ -22,15 +23,8 @@ function reverseGeocode(lat, lng, callback) {
   xhr.setRequestHeader('User-Agent', 'FlyerMap-PWA/1.0');
   xhr.onload = function() {
     if (xhr.status === 200) {
-      try {
-        const data = JSON.parse(xhr.responseText);
-        callback(data);
-      } catch (e) {
-        callback(null);
-      }
-    } else {
-      callback(null);
-    }
+      try { callback(JSON.parse(xhr.responseText)); } catch (e) { callback(null); }
+    } else { callback(null); }
   };
   xhr.onerror = function() { callback(null); };
   xhr.send();
@@ -49,7 +43,7 @@ function formatAddress(data) {
 
 function setBlockMapClick() {
   blockMapClick = true;
-  setTimeout(() => { blockMapClick = false; }, 100);
+  setTimeout(function() { blockMapClick = false; }, 100);
 }
 
 function isSidebarOpen() {
@@ -89,12 +83,10 @@ function loadBuildings() {
     if (raw) {
       buildings = JSON.parse(raw);
       if (buildings.length > 0) {
-        nextId = Math.max(...buildings.map(b => b.id)) + 1;
+        nextId = Math.max.apply(null, buildings.map(function(b) { return b.id; })) + 1;
       }
     }
-  } catch (e) {
-    buildings = [];
-  }
+  } catch (e) { buildings = []; }
 }
 
 function saveBuildings() {
@@ -104,126 +96,121 @@ function saveBuildings() {
 function getStatus(building) {
   if (building.excluded) return 'excluded';
   if (building.status === 'planned') return 'planned';
-  if (!building.lastMarkedAt) return 'pending';
-  const cooldownDays = parseInt(document.getElementById('cooldown-days').value) || DEFAULT_COOLDOWN;
-  const markedDate = new Date(building.lastMarkedAt);
-  const expiryDate = new Date(markedDate.getTime() + cooldownDays * 24 * 60 * 60 * 1000);
-  return new Date() >= expiryDate ? 'expired' : 'active';
+  if (building.status === 'done' && building.lastMarkedAt) {
+    const cd = building.cooldownDays || parseInt(document.getElementById('cooldown-days').value) || DEFAULT_COOLDOWN;
+    const markedDate = new Date(building.lastMarkedAt);
+    const expiryDate = new Date(markedDate.getTime() + cd * 24 * 60 * 60 * 1000);
+    return new Date() >= expiryDate ? 'expired' : 'active';
+  }
+  return 'planned';
 }
 
 function getRemainingText(building) {
   if (!building.lastMarkedAt) return null;
-  const cooldownDays = parseInt(document.getElementById('cooldown-days').value) || DEFAULT_COOLDOWN;
+  const cd = building.cooldownDays || parseInt(document.getElementById('cooldown-days').value) || DEFAULT_COOLDOWN;
   const markedDate = new Date(building.lastMarkedAt);
-  const expiryDate = new Date(markedDate.getTime() + cooldownDays * 24 * 60 * 60 * 1000);
+  const expiryDate = new Date(markedDate.getTime() + cd * 24 * 60 * 60 * 1000);
   const diff = expiryDate - new Date();
   if (diff <= 0) return 'Готов к повторной обклейке!';
-  const days = Math.ceil(diff / (24 * 60 * 60 * 1000));
-  return `Осталось ${days} дн.`;
+  return 'Осталось ' + Math.ceil(diff / (24 * 60 * 60 * 1000)) + ' дн.';
 }
 
 function createMarkerIcon(status) {
   const size = isMobile ? 32 : 24;
   return L.divIcon({
-    className: `marker-icon marker-${status}`,
+    className: 'marker-icon marker-' + status,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -size / 2]
   });
 }
 
+function getChoicePopupContent(lat, lng) {
+  var h = '<div class="popup-content">';
+  h += '<h3>Новый дом</h3>';
+  h += '<div class="popup-actions">';
+  h += '<button class="popup-btn popup-btn-mark" onclick="confirmNewBuilding(' + lat + ',' + lng + ',\'planned\')">Обклеить</button>';
+  h += '<button class="popup-btn popup-btn-done" onclick="confirmNewBuilding(' + lat + ',' + lng + ',\'done\')">Обклеено</button>';
+  h += '<button class="popup-btn popup-btn-exclude" onclick="confirmNewBuilding(' + lat + ',' + lng + ',\'excluded\')">Исключить</button>';
+  h += '</div></div>';
+  return h;
+}
+
 function getPopupContent(building) {
-  const status = getStatus(building);
-  const statusLabels = {
-    pending: 'Новый',
+  var status = getStatus(building);
+  var statusLabels = {
     planned: 'Обклеить',
     active: 'Обклеено',
     expired: 'Готов снова',
     excluded: 'Исключён'
   };
-  const remaining = getRemainingText(building);
-  const markedDate = building.lastMarkedAt
-    ? new Date(building.lastMarkedAt).toLocaleDateString('ru-RU')
-    : null;
+  var remaining = getRemainingText(building);
+  var markedDate = building.lastMarkedAt ? new Date(building.lastMarkedAt).toLocaleDateString('ru-RU') : null;
 
-  let html = `<div class="popup-content">`;
-  html += `<h3>Дом #${building.id}</h3>`;
+  var html = '<div class="popup-content">';
+  html += '<h3>Дом #' + building.id + '</h3>';
   if (building.address) {
-    html += `<div class="building-address">${building.address}</div>`;
-  } else if (!building.addressFetching) {
-    html += `<div class="building-address loading">Загрузка адреса...</div>`;
+    html += '<div class="building-address">' + building.address + '</div>';
+  } else if (!building.addressFetching && building.id > 0) {
+    html += '<div class="building-address loading">Загрузка адреса...</div>';
   }
-  html += `<span class="status status-${status}">${statusLabels[status]}</span>`;
+  html += '<span class="status status-' + status + '">' + (statusLabels[status] || '') + '</span>';
   if (markedDate) {
-    html += `<div class="timer">Обклеен: ${markedDate}</div>`;
+    html += '<div class="timer">Обклеен: ' + markedDate + '</div>';
   }
   if (remaining) {
-    html += `<div class="timer">${remaining}</div>`;
+    html += '<div class="timer">' + remaining + '</div>';
+  }
+  html += '<div class="popup-actions">';
+
+  if (status === 'planned') {
+    html += '<button class="popup-btn popup-btn-done" onclick="doneBuilding(' + building.id + ')">Обклеено</button>';
+    html += '<button class="popup-btn popup-btn-exclude" onclick="excludeBuilding(' + building.id + ')">Исключить</button>';
+  } else if (status === 'expired') {
+    html += '<button class="popup-btn popup-btn-mark" onclick="planBuilding(' + building.id + ')">Обклеить</button>';
+    html += '<button class="popup-btn popup-btn-done" onclick="doneBuilding(' + building.id + ')">Обклеено</button>';
+    html += '<button class="popup-btn popup-btn-exclude" onclick="excludeBuilding(' + building.id + ')">Исключить</button>';
+  } else if (status === 'active') {
+    html += '<button class="popup-btn popup-btn-exclude" onclick="excludeBuilding(' + building.id + ')">Исключить</button>';
+  } else if (status === 'excluded') {
+    html += '<button class="popup-btn popup-btn-mark" onclick="planBuilding(' + building.id + ')">Обклеить</button>';
   }
 
-  html += `<div class="popup-actions">`;
-
-  const showGlue = status === 'pending' || status === 'expired';
-  const showDone = status === 'pending' || status === 'planned' || status === 'expired';
-  const showExclude = status !== 'excluded';
-
-  if (showGlue) {
-    html += `<button class="popup-btn popup-btn-mark" onclick="planBuilding(${building.id})">Обклеить</button>`;
-  }
-  if (showDone) {
-    html += `<button class="popup-btn popup-btn-done" onclick="doneBuilding(${building.id})">Обклеено</button>`;
-  }
-  if (showExclude) {
-    html += `<button class="popup-btn popup-btn-exclude" onclick="excludeBuilding(${building.id})">Исключить</button>`;
-  }
-  html += `<button class="popup-btn popup-btn-delete" onclick="deleteBuilding(${building.id})">Удалить</button>`;
-  html += `</div></div>`;
-
+  html += '<button class="popup-btn popup-btn-delete" onclick="deleteBuilding(' + building.id + ')">Удалить</button>';
+  html += '</div></div>';
   return html;
 }
 
 function addMarkerToMap(building) {
-  const status = getStatus(building);
-  const marker = L.marker([building.lat, building.lng], {
-    icon: createMarkerIcon(status)
-  }).addTo(map);
-
-  marker.bindPopup(() => getPopupContent(building), { maxWidth: 250 });
+  var status = getStatus(building);
+  var marker = L.marker([building.lat, building.lng], { icon: createMarkerIcon(status) }).addTo(map);
+  marker.bindPopup(function() { return getPopupContent(building); }, { maxWidth: 250 });
   markers[building.id] = marker;
 }
 
 function refreshMarker(building) {
-  const marker = markers[building.id];
+  var marker = markers[building.id];
   if (!marker) return;
-  const status = getStatus(building);
-  marker.setIcon(createMarkerIcon(status));
+  marker.setIcon(createMarkerIcon(getStatus(building)));
   marker.setPopupContent(getPopupContent(building));
 }
 
 function refreshAllMarkers() {
-  buildings.forEach(b => {
-    refreshMarker(b);
-    applyFilterToMarker(b);
-  });
+  buildings.forEach(function(b) { refreshMarker(b); applyFilterToMarker(b); });
   updateStats();
 }
 
 function applyFilterToMarker(building) {
-  const marker = markers[building.id];
+  var marker = markers[building.id];
   if (!marker) return;
-  const status = getStatus(building);
-  const visible = currentFilter === 'all' || status === currentFilter;
-  if (visible) {
-    if (!map.hasLayer(marker)) marker.addTo(map);
-  } else {
-    if (map.hasLayer(marker)) map.removeLayer(marker);
-  }
+  var visible = currentFilter === 'all' || getStatus(building) === currentFilter;
+  if (visible) { if (!map.hasLayer(marker)) marker.addTo(map); }
+  else { if (map.hasLayer(marker)) map.removeLayer(marker); }
 }
 
 function updateStats() {
-  const counts = { pending: 0, planned: 0, active: 0, expired: 0, excluded: 0 };
-  buildings.forEach(b => { counts[getStatus(b)]++; });
-  document.getElementById('count-pending').textContent = counts.pending;
+  var counts = { planned: 0, active: 0, expired: 0, excluded: 0 };
+  buildings.forEach(function(b) { counts[getStatus(b)]++; });
   document.getElementById('count-planned').textContent = counts.planned;
   document.getElementById('count-active').textContent = counts.active;
   document.getElementById('count-expired').textContent = counts.expired;
@@ -232,55 +219,44 @@ function updateStats() {
 }
 
 function initMap() {
-  const settings = loadSettings();
+  var settings = loadSettings();
 
-  map = L.map('map', {
-    center: settings.center,
-    zoom: settings.zoom,
-    zoomControl: true
-  });
+  map = L.map('map', { center: settings.center, zoom: settings.zoom, zoomControl: true });
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap'
+    maxZoom: 19, attribution: '&copy; OpenStreetMap'
   }).addTo(map);
 
   document.getElementById('cooldown-days').value = settings.cooldownDays;
   updatePresetButtons();
 
   map.on('click', function(e) {
-    if (blockMapClick) {
-      blockMapClick = false;
-      return;
+    if (blockMapClick) { blockMapClick = false; return; }
+    if (isMobile && isSidebarOpen()) { closeSidebar(); return; }
+    if (tempMarker) {
+      map.removeLayer(tempMarker);
+      tempMarker = null;
     }
-    if (isMobile && isSidebarOpen()) {
-      closeSidebar();
-      return;
-    }
-    const building = {
-      id: nextId++,
-      lat: Math.round(e.latlng.lat * 1000000) / 1000000,
-      lng: Math.round(e.latlng.lng * 1000000) / 1000000,
-      status: 'pending',
-      excluded: false,
-      address: null,
-      lastMarkedAt: null,
-      createdAt: new Date().toISOString()
-    };
-    buildings.push(building);
-    addMarkerToMap(building);
-    applyFilterToMarker(building);
-    saveBuildings();
-    updateStats();
-    markers[building.id].openPopup();
-
-    building.addressFetching = true;
-    reverseGeocode(building.lat, building.lng, function(data) {
-      building.address = formatAddress(data);
-      building.addressFetching = false;
-      refreshMarker(building);
-      saveBuildings();
+    removeTempMarker();
+    var lat = Math.round(e.latlng.lat * 1000000) / 1000000;
+    var lng = Math.round(e.latlng.lng * 1000000) / 1000000;
+    var icon = L.divIcon({
+      className: 'marker-icon marker-temp',
+      iconSize: [isMobile ? 32 : 24, isMobile ? 32 : 24],
+      iconAnchor: [isMobile ? 16 : 12, isMobile ? 16 : 12],
+      popupAnchor: [0, isMobile ? -16 : -12]
     });
+    tempMarker = L.marker([lat, lng], { icon: icon }).addTo(map);
+    tempMarker.bindPopup(getChoicePopupContent(lat, lng), { maxWidth: 250, closeButton: true });
+    tempMarker.openPopup();
+  });
+
+  map.on('popupclose', function() {
+    if (tempMarker) {
+      setTimeout(function() {
+        removeTempMarker();
+      }, 50);
+    }
   });
 
   map.on('moveend zoomend', saveSettings);
@@ -288,36 +264,20 @@ function initMap() {
   map.on('locationfound', function(e) {
     if (locationMarker) map.removeLayer(locationMarker);
     if (locationCircle) map.removeLayer(locationCircle);
-    const radius = e.accuracy / 2;
-    locationMarker = L.circleMarker(e.latlng, {
-      radius: 8,
-      fillColor: '#3498db',
-      fillOpacity: 1,
-      color: '#fff',
-      weight: 3
-    });
-    locationCircle = L.circle(e.latlng, {
-      radius: radius,
-      color: '#3498db',
-      fillColor: '#3498db',
-      fillOpacity: 0.15,
-      weight: 2
-    });
-    if (isTracking) {
-      locationMarker.addTo(map);
-      locationCircle.addTo(map);
-    }
+    var radius = e.accuracy / 2;
+    locationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: '#3498db', fillOpacity: 1, color: '#fff', weight: 3 });
+    locationCircle = L.circle(e.latlng, { radius: radius, color: '#3498db', fillColor: '#3498db', fillOpacity: 0.15, weight: 2 });
+    if (isTracking) { locationMarker.addTo(map); locationCircle.addTo(map); }
   });
 
   map.on('locationerror', function() {
     alert('Не удалось определить местоположение. Проверьте, включена ли геолокация на устройстве.');
-    const btn = document.getElementById('btn-locate');
-    stopLocating(btn);
+    stopLocating(document.getElementById('btn-locate'));
   });
 
   loadBuildings();
-  buildings.forEach(b => {
-    if (b.status === undefined) b.status = 'pending';
+  buildings.forEach(function(b) {
+    if (!b.status || b.status === 'pending') b.status = 'planned';
     if (b.excluded === undefined) b.excluded = false;
     if (b.address === undefined) b.address = null;
   });
@@ -336,14 +296,54 @@ function initMap() {
   refreshAllMarkers();
 }
 
+function removeTempMarker() {
+  if (!tempMarker) return;
+  map.removeLayer(tempMarker);
+  tempMarker = null;
+}
+
+window.confirmNewBuilding = function(lat, lng, status) {
+  setBlockMapClick();
+  removeTempMarker();
+  map.closePopup();
+
+  var building = {
+    id: nextId++,
+    lat: lat,
+    lng: lng,
+    status: status,
+    excluded: status === 'excluded',
+    cooldownDays: null,
+    lastMarkedAt: status === 'done' ? new Date().toISOString() : null,
+    address: null,
+    addressFetching: false,
+    createdAt: new Date().toISOString()
+  };
+
+  buildings.push(building);
+  addMarkerToMap(building);
+  applyFilterToMarker(building);
+  saveBuildings();
+  updateStats();
+
+  building.addressFetching = true;
+  reverseGeocode(building.lat, building.lng, function(data) {
+    building.address = formatAddress(data);
+    building.addressFetching = false;
+    refreshMarker(building);
+    saveBuildings();
+  });
+};
+
 window.planBuilding = function(id) {
   setBlockMapClick();
-  const building = buildings.find(b => b.id === id);
+  var building = buildings.find(function(b) { return b.id === id; });
   if (!building) return;
   map.closePopup();
   building.status = 'planned';
   building.excluded = false;
   building.lastMarkedAt = null;
+  building.cooldownDays = null;
   refreshMarker(building);
   applyFilterToMarker(building);
   saveBuildings();
@@ -352,12 +352,13 @@ window.planBuilding = function(id) {
 
 window.doneBuilding = function(id) {
   setBlockMapClick();
-  const building = buildings.find(b => b.id === id);
+  var building = buildings.find(function(b) { return b.id === id; });
   if (!building) return;
   map.closePopup();
   building.status = 'done';
   building.excluded = false;
   building.lastMarkedAt = new Date().toISOString();
+  building.cooldownDays = parseInt(document.getElementById('cooldown-days').value) || DEFAULT_COOLDOWN;
   refreshMarker(building);
   applyFilterToMarker(building);
   saveBuildings();
@@ -366,12 +367,13 @@ window.doneBuilding = function(id) {
 
 window.excludeBuilding = function(id) {
   setBlockMapClick();
-  const building = buildings.find(b => b.id === id);
+  var building = buildings.find(function(b) { return b.id === id; });
   if (!building) return;
   map.closePopup();
   building.excluded = true;
   building.status = 'excluded';
   building.lastMarkedAt = null;
+  building.cooldownDays = null;
   refreshMarker(building);
   applyFilterToMarker(building);
   saveBuildings();
@@ -382,12 +384,9 @@ window.deleteBuilding = function(id) {
   setBlockMapClick();
   map.closePopup();
   if (!confirm('Удалить этот дом?')) return;
-  const marker = markers[id];
-  if (marker) {
-    map.removeLayer(marker);
-    delete markers[id];
-  }
-  buildings = buildings.filter(b => b.id !== id);
+  var marker = markers[id];
+  if (marker) { map.removeLayer(marker); delete markers[id]; }
+  buildings = buildings.filter(function(b) { return b.id !== id; });
   saveBuildings();
   updateStats();
 };
@@ -398,11 +397,11 @@ document.getElementById('cooldown-days').addEventListener('change', function() {
   updatePresetButtons();
 });
 
-document.querySelectorAll('.btn-preset').forEach(btn => {
+document.querySelectorAll('.btn-preset').forEach(function(btn) {
   btn.addEventListener('click', function() {
-    const days = this.dataset.days;
+    var days = this.dataset.days;
     document.getElementById('cooldown-days').value = days;
-    document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.btn-preset').forEach(function(b) { b.classList.remove('active'); });
     this.classList.add('active');
     saveSettings();
     refreshAllMarkers();
@@ -410,15 +409,15 @@ document.querySelectorAll('.btn-preset').forEach(btn => {
 });
 
 function updatePresetButtons() {
-  const current = document.getElementById('cooldown-days').value;
-  document.querySelectorAll('.btn-preset').forEach(btn => {
+  var current = document.getElementById('cooldown-days').value;
+  document.querySelectorAll('.btn-preset').forEach(function(btn) {
     btn.classList.toggle('active', btn.dataset.days === current);
   });
 }
 
-document.querySelectorAll('.btn-filter').forEach(btn => {
+document.querySelectorAll('.btn-filter').forEach(function(btn) {
   btn.addEventListener('click', function() {
-    document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.btn-filter').forEach(function(b) { b.classList.remove('active'); });
     this.classList.add('active');
     currentFilter = this.dataset.filter;
     refreshAllMarkers();
@@ -426,16 +425,12 @@ document.querySelectorAll('.btn-filter').forEach(btn => {
 });
 
 document.getElementById('btn-export').addEventListener('click', function() {
-  const data = {
-    buildings: buildings,
-    settings: loadSettings(),
-    exportedAt: new Date().toISOString()
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  var data = { buildings: buildings, settings: loadSettings(), exportedAt: new Date().toISOString() };
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
   a.href = url;
-  a.download = `flyer-map-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = 'flyer-map-' + new Date().toISOString().slice(0, 10) + '.json';
   a.click();
   URL.revokeObjectURL(url);
 });
@@ -445,22 +440,22 @@ document.getElementById('btn-import').addEventListener('click', function() {
 });
 
 document.getElementById('file-import').addEventListener('change', function(e) {
-  const file = e.target.files[0];
+  var file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
+  var reader = new FileReader();
   reader.onload = function(ev) {
     try {
-      const data = JSON.parse(ev.target.result);
+      var data = JSON.parse(ev.target.result);
       if (data.buildings && Array.isArray(data.buildings)) {
-        Object.values(markers).forEach(m => map.removeLayer(m));
+        Object.values(markers).forEach(function(m) { map.removeLayer(m); });
         markers = {};
         buildings = data.buildings;
-        buildings.forEach(b => {
-          if (b.status === undefined) b.status = 'pending';
+        buildings.forEach(function(b) {
+          if (!b.status || b.status === 'pending') b.status = 'planned';
           if (b.excluded === undefined) b.excluded = false;
         });
-        nextId = buildings.length > 0 ? Math.max(...buildings.map(b => b.id)) + 1 : 1;
-        buildings.forEach(b => addMarkerToMap(b));
+        nextId = buildings.length > 0 ? Math.max.apply(null, buildings.map(function(b) { return b.id; })) + 1 : 1;
+        buildings.forEach(function(b) { addMarkerToMap(b); });
         if (data.settings && data.settings.cooldownDays) {
           document.getElementById('cooldown-days').value = data.settings.cooldownDays;
         }
@@ -468,13 +463,9 @@ document.getElementById('file-import').addEventListener('change', function(e) {
         saveBuildings();
         saveSettings();
         refreshAllMarkers();
-        alert(`Импортировано ${buildings.length} домов`);
-      } else {
-        alert('Неверный формат файла');
-      }
-    } catch (err) {
-      alert('Ошибка чтения файла: ' + err.message);
-    }
+        alert('Импортировано ' + buildings.length + ' домов');
+      } else { alert('Неверный формат файла'); }
+    } catch (err) { alert('Ошибка чтения файла: ' + err.message); }
   };
   reader.readAsText(file);
   e.target.value = '';
@@ -487,11 +478,8 @@ document.getElementById('sidebar-close').addEventListener('click', closeSidebar)
 document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
 
 document.getElementById('btn-locate').addEventListener('click', function() {
-  const btn = this;
-  if (isTracking) {
-    stopLocating(btn);
-    return;
-  }
+  var btn = this;
+  if (isTracking) { stopLocating(btn); return; }
   if (!map) return;
   map.locate({ setView: true, maxZoom: 17, watch: true, enableHighAccuracy: true });
   btn.classList.add('tracking');
