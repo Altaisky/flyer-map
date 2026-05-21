@@ -178,36 +178,6 @@ input[type="number"]:focus {
   border-color: #e94560;
 }
 
-.preset-buttons {
-  display: flex;
-  gap: 4px;
-  margin-top: 6px;
-}
-
-.btn-preset {
-  flex: 1;
-  background: #0f3460;
-  border: 1px solid #1a4a8a;
-  color: #a0a0c0;
-  padding: 5px 0;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.btn-preset:hover {
-  background: #1a4a8a;
-  color: #e0e0e0;
-}
-
-.btn-preset.active {
-  background: #e94560;
-  border-color: #e94560;
-  color: #fff;
-}
-
 .filter-buttons {
   display: flex;
   gap: 4px;
