@@ -196,7 +196,7 @@ function getPopupContent(building) {
 
 function addMarkerToMap(building) {
   var status = getStatus(building);
-  var marker = L.marker([building.lat, building.lng], { icon: createMarkerIcon(status, !!building.comment) }).addTo(map);
+  var marker = L.marker([building.lat, building.lng], { icon: createMarkerIcon(status, !!building.comment || building.status === 'commented') }).addTo(map);
   marker.bindPopup(function() { return getPopupContent(building); }, { maxWidth: 250 });
   markers[building.id] = marker;
 }
@@ -204,7 +204,7 @@ function addMarkerToMap(building) {
 function refreshMarker(building) {
   var marker = markers[building.id];
   if (!marker) return;
-  marker.setIcon(createMarkerIcon(getStatus(building), !!building.comment));
+  marker.setIcon(createMarkerIcon(getStatus(building), !!building.comment || building.status === 'commented'));
   marker.setPopupContent(getPopupContent(building));
 }
 
