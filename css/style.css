@@ -371,6 +371,29 @@ input[type="number"]:focus {
   opacity: 0.7;
 }
 
+.marker-has-comment {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 0 3px #fff !important;
+}
+
+.building-comment {
+  font-size: 12px;
+  color: #ffd700;
+  background: #0f3460;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.popup-btn-comment {
+  background: #0f3460;
+  color: #ffd700;
+  font-size: 16px;
+  padding: 5px 10px;
+}
+
 @media (max-width: 768px) {
   #sidebar-toggle, #btn-locate {
     display: block;

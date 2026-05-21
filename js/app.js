@@ -117,10 +117,12 @@ function getRemainingText(building) {
   return 'Осталось ' + Math.ceil(diff / (24 * 60 * 60 * 1000)) + ' дн.';
 }
 
-function createMarkerIcon(status) {
+function createMarkerIcon(status, hasComment) {
   const size = isMobile ? 32 : 24;
+  var cls = 'marker-icon marker-' + status;
+  if (hasComment) cls += ' marker-has-comment';
   return L.divIcon({
-    className: 'marker-icon marker-' + status,
+    className: cls,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -size / 2]
@@ -156,6 +158,9 @@ function getPopupContent(building) {
     html += '<div class="building-address loading">Загрузка адреса...</div>';
   }
   html += '<span class="status status-' + status + '">' + (statusLabels[status] || '') + '</span>';
+  if (building.comment) {
+    html += '<div class="building-comment">' + building.comment.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
+  }
   if (markedDate) {
     html += '<div class="timer">Обклеен: ' + markedDate + '</div>';
   }
@@ -177,13 +182,14 @@ function getPopupContent(building) {
   }
 
   html += '<button class="popup-btn popup-btn-delete" onclick="deleteBuilding(' + building.id + ')">Удалить</button>';
+  html += '<button class="popup-btn popup-btn-comment" onclick="addComment(' + building.id + ')">💬</button>';
   html += '</div></div>';
   return html;
 }
 
 function addMarkerToMap(building) {
   var status = getStatus(building);
-  var marker = L.marker([building.lat, building.lng], { icon: createMarkerIcon(status) }).addTo(map);
+  var marker = L.marker([building.lat, building.lng], { icon: createMarkerIcon(status, !!building.comment) }).addTo(map);
   marker.bindPopup(function() { return getPopupContent(building); }, { maxWidth: 250 });
   markers[building.id] = marker;
 }
@@ -191,7 +197,7 @@ function addMarkerToMap(building) {
 function refreshMarker(building) {
   var marker = markers[building.id];
   if (!marker) return;
-  marker.setIcon(createMarkerIcon(getStatus(building)));
+  marker.setIcon(createMarkerIcon(getStatus(building), !!building.comment));
   marker.setPopupContent(getPopupContent(building));
 }
 
@@ -279,6 +285,7 @@ function initMap() {
     if (!b.status || b.status === 'pending') b.status = 'planned';
     if (b.excluded === undefined) b.excluded = false;
     if (b.address === undefined) b.address = null;
+    if (b.comment === undefined) b.comment = null;
   });
   buildings.forEach(function(b) {
     addMarkerToMap(b);
@@ -316,6 +323,7 @@ window.confirmNewBuilding = function(lat, lng, status) {
     lastMarkedAt: status === 'done' ? new Date().toISOString() : null,
     address: null,
     addressFetching: false,
+    comment: null,
     createdAt: new Date().toISOString()
   };
 
@@ -390,6 +398,18 @@ window.deleteBuilding = function(id) {
   updateStats();
 };
 
+window.addComment = function(id) {
+  setBlockMapClick();
+  var building = buildings.find(function(b) { return b.id === id; });
+  if (!building) return;
+  var current = building.comment || '';
+  var text = prompt('Комментарий к дому #' + id, current);
+  if (text === null) return;
+  building.comment = text.trim() || null;
+  refreshMarker(building);
+  saveBuildings();
+};
+
 document.getElementById('cooldown-days').addEventListener('change', function() {
   saveSettings();
   refreshAllMarkers();
@@ -433,6 +453,7 @@ document.getElementById('file-import').addEventListener('change', function(e) {
         buildings.forEach(function(b) {
           if (!b.status || b.status === 'pending') b.status = 'planned';
           if (b.excluded === undefined) b.excluded = false;
+          if (b.comment === undefined) b.comment = null;
         });
         nextId = buildings.length > 0 ? Math.max.apply(null, buildings.map(function(b) { return b.id; })) + 1 : 1;
         buildings.forEach(function(b) { addMarkerToMap(b); });
