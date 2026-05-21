@@ -53,11 +53,13 @@ function isSidebarOpen() {
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('sidebar-overlay').classList.add('open');
+  document.body.classList.add('sidebar-open');
 }
 
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.classList.remove('sidebar-open');
 }
 
 function loadSettings() {
@@ -218,7 +220,8 @@ function updateStats() {
 function initMap() {
   var settings = loadSettings();
 
-  map = L.map('map', { center: settings.center, zoom: settings.zoom, zoomControl: true });
+  map = L.map('map', { center: settings.center, zoom: settings.zoom, zoomControl: false });
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, attribution: '&copy; OpenStreetMap'
@@ -470,7 +473,9 @@ document.getElementById('file-import').addEventListener('change', function(e) {
 
 setInterval(refreshAllMarkers, 60000);
 
-document.getElementById('sidebar-toggle').addEventListener('click', openSidebar);
+document.getElementById('sidebar-toggle').addEventListener('click', function() {
+  if (isSidebarOpen()) { closeSidebar(); } else { openSidebar(); }
+});
 document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
 document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
 

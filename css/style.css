@@ -32,8 +32,13 @@ body {
 }
 
 #sidebar-toggle {
-  top: 12px;
+  bottom: 24px;
   left: 12px;
+}
+
+body.sidebar-open #sidebar-toggle {
+  opacity: 0;
+  pointer-events: none;
 }
 
 #btn-locate {
