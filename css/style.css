@@ -153,6 +153,7 @@ body.sidebar-open #sidebar-close {
 .dot-pending { background: #3498db; }
 .dot-planned { background: #f39c12; }
 .dot-active { background: #2ecc71; }
+.dot-commented { background: #9b59b6; }
 .dot-expired { background: #f39c12; }
 .dot-excluded { background: #7f8c8d; }
 
@@ -297,6 +298,11 @@ input[type="number"]:focus {
   color: #2ecc71;
 }
 
+.status-commented {
+  background: #9b59b633;
+  color: #9b59b6;
+}
+
 .status-expired {
   background: #f39c1233;
   color: #f39c12;
@@ -362,6 +368,7 @@ input[type="number"]:focus {
 .marker-pending { background: #3498db; }
 .marker-planned { background: #f39c12; }
 .marker-active { background: #2ecc71; }
+.marker-commented { background: #9b59b6; }
 .marker-expired { background: #f39c12; }
 .marker-excluded { background: #7f8c8d; }
 

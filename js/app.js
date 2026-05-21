@@ -98,6 +98,7 @@ function saveBuildings() {
 
 function getStatus(building) {
   if (building.excluded) return 'excluded';
+  if (building.status === 'commented') return 'commented';
   if (building.status === 'planned') return 'planned';
   if (building.status === 'done' && building.lastMarkedAt) {
     const cd = building.cooldownDays || parseInt(document.getElementById('cooldown-days').value) || DEFAULT_COOLDOWN;
@@ -150,7 +151,8 @@ function getPopupContent(building) {
   var statusLabels = {
     planned: 'Обклеить',
     active: 'Обклеено',
-    excluded: 'Исключён'
+    excluded: 'Исключён',
+    commented: 'Закомментировано'
   };
   var remaining = getRemainingText(building);
   var markedDate = building.lastMarkedAt ? new Date(building.lastMarkedAt).toLocaleDateString('ru-RU') : null;
@@ -174,7 +176,7 @@ function getPopupContent(building) {
   }
   html += '<div class="popup-actions">';
 
-  if (status === 'planned') {
+  if (status === 'planned' || status === 'commented') {
     if (building.status === 'done') {
       html += '<button class="popup-btn popup-btn-mark" onclick="planBuilding(' + building.id + ')">Обклеить</button>';
     }
@@ -220,11 +222,12 @@ function applyFilterToMarker(building) {
 }
 
 function updateStats() {
-  var counts = { planned: 0, active: 0, excluded: 0 };
+  var counts = { planned: 0, active: 0, excluded: 0, commented: 0 };
   buildings.forEach(function(b) { counts[getStatus(b)]++; });
   document.getElementById('count-planned').textContent = counts.planned;
   document.getElementById('count-active').textContent = counts.active;
   document.getElementById('count-excluded').textContent = counts.excluded;
+  document.getElementById('count-commented').textContent = counts.commented;
   document.getElementById('count-total').textContent = buildings.length;
 }
 
@@ -269,7 +272,7 @@ function initMap() {
         if (tempComment) {
           var lat = tempMarker.getLatLng().lat;
           var lng = tempMarker.getLatLng().lng;
-          confirmNewBuilding(lat, lng, 'planned');
+          confirmNewBuilding(lat, lng, 'commented');
         } else {
           removeTempMarker();
         }
