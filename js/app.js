@@ -438,6 +438,7 @@ window.addComment = function(id) {
     building.comment = text;
     refreshMarker(building);
     saveBuildings();
+    map.closePopup();
   });
 };
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flyer-map-v26';
+const CACHE_NAME = 'flyer-map-v27';
 
 function getBaseUrl() {
   return self.location.pathname.replace(/\/sw\.js$/, '');
