@@ -446,7 +446,9 @@ window.addTempComment = function() {
   setBlockMapClick();
   openCommentDialog(tempComment || '', function(text) {
     tempComment = text;
-    if (tempMarker) {
+    if (tempMarker && tempComment) {
+      tempMarker.closePopup();
+    } else if (tempMarker) {
       var cls = 'marker-icon marker-temp';
       if (tempComment) cls += ' marker-has-comment';
       var size = isMobile ? 32 : 24;
