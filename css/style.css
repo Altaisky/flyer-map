@@ -210,51 +210,47 @@ input[type="number"]:focus {
 }
 
 .btn-filter[data-filter="planned"] {
-  background: rgba(243,156,18,0.15);
-  border-color: rgba(243,156,18,0.3);
-  color: #f39c12;
-}
-
-.btn-filter[data-filter="planned"].active {
   background: #f39c12;
   border-color: #f39c12;
   color: #fff;
+  opacity: 0.6;
+}
+
+.btn-filter[data-filter="planned"].active {
+  opacity: 1;
 }
 
 .btn-filter[data-filter="active"] {
-  background: rgba(46,204,113,0.15);
-  border-color: rgba(46,204,113,0.3);
-  color: #2ecc71;
-}
-
-.btn-filter[data-filter="active"].active {
   background: #2ecc71;
   border-color: #2ecc71;
   color: #fff;
+  opacity: 0.6;
+}
+
+.btn-filter[data-filter="active"].active {
+  opacity: 1;
 }
 
 .btn-filter[data-filter="commented"] {
-  background: rgba(155,89,182,0.15);
-  border-color: rgba(155,89,182,0.3);
-  color: #9b59b6;
-}
-
-.btn-filter[data-filter="commented"].active {
   background: #9b59b6;
   border-color: #9b59b6;
   color: #fff;
+  opacity: 0.6;
+}
+
+.btn-filter[data-filter="commented"].active {
+  opacity: 1;
 }
 
 .btn-filter[data-filter="excluded"] {
-  background: rgba(127,140,141,0.15);
-  border-color: rgba(127,140,141,0.3);
-  color: #7f8c8d;
-}
-
-.btn-filter[data-filter="excluded"].active {
   background: #7f8c8d;
   border-color: #7f8c8d;
   color: #fff;
+  opacity: 0.6;
+}
+
+.btn-filter[data-filter="excluded"].active {
+  opacity: 1;
 }
 
 .btn {
