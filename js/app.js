@@ -423,7 +423,6 @@ window.excludeBuilding = function(id) {
 window.deleteBuilding = function(id) {
   setBlockMapClick();
   map.closePopup();
-  if (!confirm('Удалить этот дом?')) return;
   var marker = markers[id];
   if (marker) { map.removeLayer(marker); delete markers[id]; }
   buildings = buildings.filter(function(b) { return b.id !== id; });
