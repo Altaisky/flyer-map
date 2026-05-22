@@ -1,74 +1,83 @@
 # Состояние проекта: Map
 
-_Обновлено: 2026-05-19_
+_Обновлено: 2026-05-22_
 
 ## Кратко
-Одностраничное веб-приложение на чистом HTML/CSS/JS с библиотекой Leaflet для отображения карты OpenStreetMap. Данные хранятся в localStorage браузера. Интерфейс — тёмная тема с боковой панелью управления.
+PWA на чистом HTML/CSS/JS + Leaflet + OpenStreetMap. Карта города с маркерами домов. 4 статуса, таймер кд, комментарии, геолокация, обратный геокодинг. Развёрнуто на GitHub Pages, устанавливается на телефон как нативное приложение (офлайн).
 
 ## Стек и зависимости
 - Фронтенд: Vanilla HTML + CSS + JavaScript (без сборки)
 - Карта: Leaflet 1.9.4 (CDN)
 - Тайлы: OpenStreetMap
+- Геокодинг: Nominatim (OSM)
 - Хранение: localStorage
-- Серверная часть: отсутствует
-
-## Архитектура
-Классическое SPA без фреймворка. Один объект `buildings` (массив) — единственный источник данных. Все маркеры Leaflet хранятся в словаре `markers` с ключом `building.id`. Пользовательские действия (обклеить/обклеено/исключить/удалить) мутируют массив `buildings`, обновляют маркер на карте и сохраняют в localStorage.
-
-Поток данных: клик → обработчик → мутация `buildings[]` → `saveBuildings()` + `refreshMarker()` + `updateStats()`.
+- PWA: manifest.json + Service Worker (сеть-first для HTML, кэш-first для CDN)
+- Хостинг: GitHub Pages (бесплатно)
 
 ## Структура репозитория
-- `index.html` — главная страница, подключает Leaflet CDN, стили и скрипт
-- `css/style.css` — стили интерфейса (тёмная тема, сайдбар, попапы, адаптив)
-- `js/app.js` — вся логика приложения
+- `index.html` — главная страница, PWA-манифест, SW-регистрация
+- `css/style.css` — тёмная тема, сайдбар-ящик, попапы, адаптив (≤768px)
+- `js/app.js` — вся логика: карта, статусы, таймер, комментарии, геолокация, экспорт/импорт
+- `sw.js` — Service Worker: сеть-first (HTML), кэш-first (CDN), сеть-first (своё)
+- `manifest.json` — PWA-манифест
+- `icons/` — иконки 192×192 и 512×512
 
 ## Ключевые сущности
 
 ### Building (дом)
 ```js
 {
-  id: number,           // уникальный ID (auto-increment)
-  lat: number,          // широта (6 знаков)
-  lng: number,          // долгота (6 знаков)
-  status: 'pending' | 'planned' | 'done' | 'excluded',
-  excluded: boolean,    // true = дом исключён
-  lastMarkedAt: string | null,  // ISO-дата обклейки (статус «Обклеено»)
-  createdAt: string     // ISO-дата создания
+  id: number,
+  lat: number, lng: number,
+  status: 'planned' | 'done' | 'excluded' | 'commented',
+  excluded: boolean,
+  cooldownDays: number | null,
+  lastMarkedAt: string | null,
+  address: string | null,
+  comment: string | null,
+  createdAt: string
 }
 ```
 
 ### Вычисляемые статусы (`getStatus()`)
-- `pending` (🔵 синий) — новый дом, нет действий
-- `planned` (🟡 жёлтый) — `status === 'planned'`, запланирован к обклейке
-- `active` (🔴 красный) — обклеено, таймер кд не истёк (`lastMarkedAt` + `cooldownDays` > сейчас)
-- `expired` (🟢 зелёный) — кд истёк, можно обклеивать снова
-- `excluded` (⚪ серый) — дом исключён из кампании
+- `active` (🟢 зелёный) — status='done', таймер не истёк
+- `planned` (🟠 оранжевый) — status='planned' или status='done' и таймер истёк
+- `excluded` (⚪ серый) — excluded=true
+- `commented` (🟣 фиолетовый) — status='commented'
+- Индикатор комментария: золотая точка (::after) если есть comment или status='commented'
 
-### Действия в попапе
-- «Обклеить» → `planBuilding(id)` → статус `planned`
-- «Обклеено» → `doneBuilding(id)` → устанавливает `lastMarkedAt`, запускает таймер
-- «Исключить» → `excludeBuilding(id)` → `excluded: true`
-- «Удалить» → `deleteBuilding(id)` — удаление маркера и данных
+### Создание дома
+1. Клик по карте → временный серый маркер + карточка выбора
+2. 💬 → prompt комментария → обновляется попап и иконка маркера
+3. Обклеить/Обклеено/Исключить → дом создаётся с выбранным статусом
+4. Закрыть попап с комментарием → авто-сохранение со статусом 'commented'
+5. Закрыть попап без комментария → маркер удаляется
 
-### Основные функции `js/app.js`
-- `initMap()` — инициализация карты, загрузка данных, привязка событий
-- `getStatus(building)` → вычисляемый статус с учётом таймера
-- `planBuilding(id)` / `doneBuilding(id)` / `excludeBuilding(id)` / `deleteBuilding(id)` — действия
-- `refreshAllMarkers()` — обновление иконок и видимости всех маркеров
+### Действия в попапе существующего дома
+- `planBuilding(id)` — переводит в planned
+- `doneBuilding(id)` — ставит lastMarkedAt, запускает таймер
+- `excludeBuilding(id)` — excluded=true
+- `deleteBuilding(id)` — удаляет безвозвратно
+- `addComment(id)` — prompt редактирования комментария
 
 ## Точки входа и сценарии запуска
-- Запуск: открыть `index.html` в браузере (файловая система или локальный сервер)
-- Сборка: не требуется
-- Тестирование: ручное
+- Деплой: `git push` → GitHub Pages
+- Локально: открыть `index.html` в браузере (файловая система)
+- Телефон: https://altaisky.github.io/flyer-map/ → «На экран Домой»
 
 ## Состояние работы
-- Что работает стабильно: карта, добавление домов, 5 статусов с цветовыми маркерами, таймер кд, фильтрация, экспорт/импорт, localStorage
-- Что работает: мобильная версия — полноэкранная карта, сайдбар-выдвижной ящик, геолокация с отслеживанием, кнопка навигации (geo: URI), PWA с автообновлением SW
-- Известные проблемы / TODO: нет геокодинга (поиск по адресу), тайлы OSM могут грузиться медленно без интернета
+- Стабильно: карта, 4 статуса, таймер, комментарии, фильтрация, экспорт/импорт, PWA, геолокация, геокодинг
+- Известные проблемы: тайлы OSM без интернета не грузятся (только закэшированные), Nominatim может не найти номер дома
 
 ## Заметки для будущего себя
-- `blockMapClick` — флаг с авто-сбросом через 100мс (`setBlockMapClick`), предотвращает создание маркера при клике на кнопки popup
-- `isMobile` — определение тач-устройства, влияет на размер маркеров (24px / 32px)
-- Мобильный сайдбар: CSS `transform: translateX(-100%)` + класс `.open`, оверлей для закрытия
-- Обратная совместимость: при загрузке старых данных без полей `status`/`excluded` подставляются дефолты (`'pending'`, `false`)
-- `setInterval(refreshAllMarkers, 60000)` обновляет статусы каждую минуту (для перехода active → expired)
+- ⚠ **НИКОГДА не использовать `...` в edit newString/oldString** — инструмент вставляет это как литерал, ломает HTML
+- `blockMapClick` с авто-сбросом 100мс — от всплытия кликов попапа в карту
+- `tempMarker/tempComment` — временные данные при создании дома, очищаются в `removeTempMarker()`
+- В `confirmNewBuilding` комментарий копируется в локальную переменную ДО вызова `removeTempMarker()`
+- `isMobile` = `'ontouchstart' in window`, влияет на размер маркеров (24px/32px)
+- Мобильный сайдбар: `transform: translateX(-100%)` + `.open`, оверлей, `body.sidebar-open`
+- Зум перенесён в `bottomright`, гамбургер в `bottomleft`, кнопка закрытия сайдбара там же
+- Обратная совместимость: отсутствующие поля (`status`, `excluded`, `address`, `comment`) подставляются при загрузке
+- `setInterval(refreshAllMarkers, 60000)` — переход active→planned раз в минуту
+- SW: `updateViaCache: 'none'`, HTML — сеть-first, CDN — кэш-first, остальное — сеть-first
+- Кэш SW бампается с каждой версией (`flyer-map-v21`)

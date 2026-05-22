@@ -216,14 +216,26 @@ function refreshAllMarkers() {
 function applyFilterToMarker(building) {
   var marker = markers[building.id];
   if (!marker) return;
-  var visible = currentFilter === 'all' || getStatus(building) === currentFilter;
+  var visible;
+  if (currentFilter === 'commented') {
+    visible = !!building.comment;
+  } else {
+    visible = currentFilter === 'all' || getStatus(building) === currentFilter;
+  }
   if (visible) { if (!map.hasLayer(marker)) marker.addTo(map); }
   else { if (map.hasLayer(marker)) map.removeLayer(marker); }
 }
 
 function updateStats() {
   var counts = { planned: 0, active: 0, excluded: 0, commented: 0 };
-  buildings.forEach(function(b) { counts[getStatus(b)]++; });
+  buildings.forEach(function(b) {
+    var s = getStatus(b);
+    if (s === 'planned') counts.planned++;
+    else if (s === 'active') counts.active++;
+    else if (s === 'excluded') counts.excluded++;
+    if (s === 'commented') counts.commented++;
+    if (b.comment && s !== 'commented') counts.commented++;
+  });
   document.getElementById('count-planned').textContent = counts.planned;
   document.getElementById('count-active').textContent = counts.active;
   document.getElementById('count-excluded').textContent = counts.excluded;
