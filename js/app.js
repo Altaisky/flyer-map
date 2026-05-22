@@ -183,9 +183,11 @@ function getPopupContent(building) {
     html += '<button class="popup-btn popup-btn-done" onclick="doneBuilding(' + building.id + ')">Обклеено</button>';
     html += '<button class="popup-btn popup-btn-exclude" onclick="excludeBuilding(' + building.id + ')">Исключить</button>';
   } else if (status === 'active') {
+    html += '<button class="popup-btn popup-btn-mark" onclick="planBuilding(' + building.id + ')">Обклеить</button>';
     html += '<button class="popup-btn popup-btn-exclude" onclick="excludeBuilding(' + building.id + ')">Исключить</button>';
   } else if (status === 'excluded') {
     html += '<button class="popup-btn popup-btn-mark" onclick="planBuilding(' + building.id + ')">Обклеить</button>';
+    html += '<button class="popup-btn popup-btn-done" onclick="doneBuilding(' + building.id + ')">Обклеено</button>';
   }
 
   html += '<button class="popup-btn popup-btn-delete" onclick="deleteBuilding(' + building.id + ')">Удалить</button>';
