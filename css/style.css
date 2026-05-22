@@ -416,8 +416,9 @@ input[type="number"]:focus {
   inset: 0;
   z-index: 2000;
   background: rgba(0,0,0,0.6);
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding-top: 5vh;
 }
 
 #comment-dialog.open {
