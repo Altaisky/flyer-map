@@ -410,6 +410,61 @@ input[type="number"]:focus {
   padding: 5px 10px;
 }
 
+#comment-dialog {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0,0,0,0.6);
+  align-items: center;
+  justify-content: center;
+}
+
+#comment-dialog.open {
+  display: flex;
+}
+
+#comment-dialog-inner {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 12px;
+  padding: 16px;
+  width: 90vw;
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+#comment-textarea {
+  width: 100%;
+  min-height: 100px;
+  background: #0f3460;
+  border: 1px solid #1a4a8a;
+  color: #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+}
+
+#comment-textarea:focus {
+  border-color: #e94560;
+}
+
+#comment-dialog-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#comment-dialog-actions .popup-btn {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
 @media (max-width: 768px) {
   #sidebar-toggle, #btn-locate {
     display: block;

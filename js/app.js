@@ -434,34 +434,67 @@ window.addComment = function(id) {
   setBlockMapClick();
   var building = buildings.find(function(b) { return b.id === id; });
   if (!building) return;
-  var current = building.comment || '';
-  var text = prompt('Комментарий к дому #' + id, current);
-  if (text === null) return;
-  building.comment = text.trim() || null;
-  refreshMarker(building);
-  saveBuildings();
+  openCommentDialog(building.comment || '', function(text) {
+    building.comment = text;
+    refreshMarker(building);
+    saveBuildings();
+  });
 };
 
 window.addTempComment = function() {
   setBlockMapClick();
-  var text = prompt('Комментарий', tempComment || '');
-  if (text === null) return;
-  tempComment = text.trim() || null;
-  if (tempMarker) {
-    var cls = 'marker-icon marker-temp';
-    if (tempComment) cls += ' marker-has-comment';
-    var size = isMobile ? 32 : 24;
-    tempMarker.setIcon(L.divIcon({
-      className: cls,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-      popupAnchor: [0, -size / 2]
-    }));
-    tempMarker.setPopupContent(getChoicePopupContent(
-      tempMarker.getLatLng().lat, tempMarker.getLatLng().lng
-    ));
-  }
+  openCommentDialog(tempComment || '', function(text) {
+    tempComment = text;
+    if (tempMarker) {
+      var cls = 'marker-icon marker-temp';
+      if (tempComment) cls += ' marker-has-comment';
+      var size = isMobile ? 32 : 24;
+      tempMarker.setIcon(L.divIcon({
+        className: cls,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -size / 2]
+      }));
+      tempMarker.setPopupContent(getChoicePopupContent(
+        tempMarker.getLatLng().lat, tempMarker.getLatLng().lng
+      ));
+    }
+  });
 };
+
+function openCommentDialog(currentText, onSave) {
+  var dialog = document.getElementById('comment-dialog');
+  var textarea = document.getElementById('comment-textarea');
+  textarea.value = currentText;
+  dialog.classList.add('open');
+  setTimeout(function() { textarea.focus(); }, 100);
+
+  function save() {
+    var text = textarea.value.trim();
+    close();
+    onSave(text || null);
+  }
+
+  function close() {
+    dialog.classList.remove('open');
+    document.getElementById('comment-save').onclick = null;
+    document.getElementById('comment-cancel').onclick = null;
+    textarea.onkeydown = null;
+    dialog.onclick = null;
+  }
+
+  textarea.onkeydown = function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      save();
+    }
+  };
+  document.getElementById('comment-save').onclick = save;
+  document.getElementById('comment-cancel').onclick = function() { close(); };
+  dialog.onclick = function(e) {
+    if (e.target === dialog) close();
+  };
+}
 
 document.getElementById('cooldown-days').addEventListener('change', function() {
   saveSettings();
