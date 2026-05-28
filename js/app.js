@@ -637,6 +637,126 @@ function latLngToTile(lat, lng, zoom) {
   };
 }
 
+let listSort = 'address';
+let listFilter = 'all';
+
+document.getElementById('btn-list').addEventListener('click', openHouseList);
+document.getElementById('list-close').addEventListener('click', closeHouseList);
+
+document.querySelectorAll('.list-sort-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.list-sort-btn').forEach(function(b) { b.classList.remove('active'); });
+    this.classList.add('active');
+    listSort = this.dataset.sort;
+    renderHouseList();
+  });
+});
+
+document.querySelectorAll('#list-filters .btn-filter').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('#list-filters .btn-filter').forEach(function(b) { b.classList.remove('active'); });
+    this.classList.add('active');
+    listFilter = this.dataset.filter;
+    renderHouseList();
+  });
+});
+
+function openHouseList() {
+  if (isMobile && isSidebarOpen()) closeSidebar();
+  document.getElementById('house-list').classList.add('open');
+  renderHouseList();
+}
+
+function closeHouseList() {
+  document.getElementById('house-list').classList.remove('open');
+}
+
+function renderHouseList() {
+  var container = document.getElementById('house-list-content');
+  var list = buildings.slice();
+
+  var statusLabels = {
+    planned: 'Обклеить',
+    active: 'Обклеено',
+    commented: 'Закомментировано',
+    excluded: 'Исключён'
+  };
+  var dotClasses = {
+    planned: 'dot-planned',
+    active: 'dot-active',
+    commented: 'dot-commented',
+    excluded: 'dot-excluded'
+  };
+
+  if (listFilter !== 'all') {
+    if (listFilter === 'commented') {
+      list = list.filter(function(b) { return !!b.comment; });
+    } else {
+      list = list.filter(function(b) { return getStatus(b) === listFilter; });
+    }
+  }
+
+  if (listSort === 'address') {
+    list.sort(function(a, b) {
+      var addrA = a.address || 'Дом #' + a.id;
+      var addrB = b.address || 'Дом #' + b.id;
+      return addrA.localeCompare(addrB, 'ru');
+    });
+  } else if (listSort === 'date') {
+    list.sort(function(a, b) {
+      var dateA = a.lastMarkedAt || a.createdAt || '';
+      var dateB = b.lastMarkedAt || b.createdAt || '';
+      return dateB.localeCompare(dateA);
+    });
+  } else if (listSort === 'status') {
+    var order = { planned: 0, active: 1, commented: 2, excluded: 3 };
+    list.sort(function(a, b) {
+      return (order[getStatus(a)] || 99) - (order[getStatus(b)] || 99);
+    });
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = '<div class="list-empty">Нет домов</div>';
+    return;
+  }
+
+  var html = '';
+  list.forEach(function(b) {
+    var status = getStatus(b);
+    var addr = b.address || 'Дом #' + b.id;
+    var meta = '';
+    var remaining = getRemainingText(b);
+    if (remaining) meta += remaining;
+    if (b.lastMarkedAt) {
+      if (meta) meta += ' | ';
+      meta += new Date(b.lastMarkedAt).toLocaleDateString('ru-RU');
+    }
+
+    html += '<div class="list-item" onclick="focusHouse(' + b.id + ')">';
+    html += '<span class="list-item-dot ' + dotClasses[status] + '"></span>';
+    html += '<div class="list-item-info">';
+    html += '<div class="list-item-address">' + addr + '</div>';
+    if (meta) {
+      html += '<div class="list-item-meta">' + meta + '</div>';
+    }
+    html += '</div>';
+    if (b.comment) {
+      html += '<span class="list-item-comment">💬</span>';
+    }
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+window.focusHouse = function(id) {
+  closeHouseList();
+  var marker = markers[id];
+  if (!marker) return;
+  map.setView(marker.getLatLng(), Math.max(map.getZoom(), 17));
+  marker.openPopup();
+};
+
 setInterval(refreshAllMarkers, 60000);
 
 document.getElementById('sidebar-toggle').addEventListener('click', function() {
