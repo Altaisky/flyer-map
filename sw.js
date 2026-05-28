@@ -1,4 +1,5 @@
 const CACHE_NAME = 'flyer-map-v30';
+const TILE_CACHE = 'flyer-map-tiles-v1';
 
 function getBaseUrl() {
   return self.location.pathname.replace(/\/sw\.js$/, '');
@@ -26,7 +27,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== TILE_CACHE).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -35,6 +36,24 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
+
+  if (url.hostname.endsWith('tile.openstreetmap.org')) {
+    event.respondWith(
+      caches.open(TILE_CACHE).then(cache =>
+        cache.match(event.request).then(cached => {
+          if (cached) return cached;
+          return fetch(event.request).then(response => {
+            if (response.ok) {
+              cache.put(event.request, response.clone());
+            }
+            return response;
+          }).catch(() => cached);
+        })
+      )
+    );
+    return;
+  }
+
   const isDocument = event.request.destination === 'document';
 
   if (isDocument) {
@@ -75,4 +94,25 @@ self.addEventListener('fetch', event => {
       return response;
     }).catch(() => caches.match(event.request))
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.action === 'preloadTiles') {
+    const tiles = event.data.tiles || [];
+    event.waitUntil(
+      caches.open(TILE_CACHE).then(cache =>
+        Promise.all(
+          tiles.map(url =>
+            cache.match(url).then(cached => {
+              if (cached) return cached;
+              return fetch(url).then(response => {
+                if (response.ok) cache.put(url, response.clone());
+                return response;
+              }).catch(() => null);
+            })
+          )
+        )
+      )
+    );
+  }
 });

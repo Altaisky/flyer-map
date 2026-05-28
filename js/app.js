@@ -560,6 +560,56 @@ document.getElementById('file-import').addEventListener('change', function(e) {
   e.target.value = '';
 });
 
+document.getElementById('btn-offline').addEventListener('click', function() {
+  var bounds = map.getBounds();
+  var minZoom = Math.max(map.getZoom() - 2, 0);
+  var maxZoom = Math.min(map.getZoom() + 1, 19);
+  var tiles = [];
+
+  for (var z = minZoom; z <= maxZoom; z++) {
+    var nw = latLngToTile(bounds.getNorthWest().lat, bounds.getNorthWest().lng, z);
+    var se = latLngToTile(bounds.getSouthEast().lat, bounds.getSouthEast().lng, z);
+    var x1 = Math.min(nw.x, se.x);
+    var x2 = Math.max(nw.x, se.x);
+    var y1 = Math.min(nw.y, se.y);
+    var y2 = Math.max(nw.y, se.y);
+    for (var x = x1; x <= x2; x++) {
+      for (var y = y1; y <= y2; y++) {
+        tiles.push('https://a.tile.openstreetmap.org/' + z + '/' + x + '/' + y + '.png');
+      }
+    }
+  }
+
+  var status = document.getElementById('offline-status');
+  var count = tiles.length;
+  status.textContent = 'Сохраняю ' + count + ' тайлов...';
+  status.style.color = '#ffd700';
+
+  var loaded = 0;
+  var failed = 0;
+
+  tiles.forEach(function(url) {
+    fetch(url).then(function(r) {
+      if (r.ok) loaded++; else failed++;
+    }).catch(function() {
+      failed++;
+    }).finally(function() {
+      if (loaded + failed >= count) {
+        status.textContent = 'Сохранено: ' + loaded + ' тайлов' + (failed > 0 ? ' (' + failed + ' ошибок)' : '');
+        status.style.color = '#2ecc71';
+      }
+    });
+  });
+});
+
+function latLngToTile(lat, lng, zoom) {
+  var n = Math.pow(2, zoom);
+  return {
+    x: Math.floor((lng + 180) / 360 * n),
+    y: Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n)
+  };
+}
+
 setInterval(refreshAllMarkers, 60000);
 
 document.getElementById('sidebar-toggle').addEventListener('click', function() {
