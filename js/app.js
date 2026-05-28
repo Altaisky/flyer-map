@@ -15,6 +15,7 @@ let isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 let locationMarker = null;
 let locationCircle = null;
 let isTracking = false;
+let locateAttempt = 0;
 let tempMarker = null;
 let tempComment = null;
 
@@ -306,8 +307,14 @@ function initMap() {
   });
 
   map.on('locationerror', function() {
-    alert('Не удалось определить местоположение. Проверьте, включена ли геолокация на устройстве.');
-    stopLocating(document.getElementById('btn-locate'));
+    locateAttempt++;
+    if (locateAttempt === 1) {
+      map.stopLocate();
+      map.locate({ setView: true, maxZoom: 17, watch: true, enableHighAccuracy: false, timeout: 15000 });
+    } else {
+      alert('Не удалось определить местоположение ни по GPS, ни по Wi-Fi. Проверьте, включена ли геолокация в настройках телефона.');
+      stopLocating(document.getElementById('btn-locate'));
+    }
   });
 
   loadBuildings();
@@ -642,6 +649,7 @@ document.getElementById('btn-locate').addEventListener('click', function() {
   var btn = this;
   if (isTracking) { stopLocating(btn); return; }
   if (!map) return;
+  locateAttempt = 0;
   map.locate({ setView: true, maxZoom: 17, watch: true, enableHighAccuracy: true });
   btn.classList.add('tracking');
   btn.textContent = '\u2715';
