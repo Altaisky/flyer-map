@@ -251,7 +251,7 @@ function initMap() {
   map = L.map('map', { center: settings.center, zoom: settings.zoom, zoomControl: false });
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, attribution: '&copy; OpenStreetMap'
   }).addTo(map);
 
@@ -563,7 +563,7 @@ document.getElementById('file-import').addEventListener('change', function(e) {
 document.getElementById('btn-offline').addEventListener('click', function() {
   var bounds = map.getBounds();
   var minZoom = Math.max(map.getZoom() - 2, 0);
-  var maxZoom = Math.min(map.getZoom() + 1, 19);
+  var maxZoom = Math.min(map.getZoom() + 5, 19);
   var tiles = [];
 
   for (var z = minZoom; z <= maxZoom; z++) {
@@ -575,31 +575,51 @@ document.getElementById('btn-offline').addEventListener('click', function() {
     var y2 = Math.max(nw.y, se.y);
     for (var x = x1; x <= x2; x++) {
       for (var y = y1; y <= y2; y++) {
-        tiles.push('https://a.tile.openstreetmap.org/' + z + '/' + x + '/' + y + '.png');
+        tiles.push('https://tile.openstreetmap.org/' + z + '/' + x + '/' + y + '.png');
       }
     }
   }
 
   var status = document.getElementById('offline-status');
   var count = tiles.length;
-  status.textContent = 'Сохраняю ' + count + ' тайлов...';
+  if (count === 0) {
+    status.textContent = 'Нет тайлов для сохранения';
+    status.style.color = '#f39c12';
+    return;
+  }
+  status.textContent = 'Сохраняю 0/' + count + ' тайлов...';
   status.style.color = '#ffd700';
 
   var loaded = 0;
   var failed = 0;
+  var batchSize = 12;
+  var index = 0;
 
-  tiles.forEach(function(url) {
-    fetch(url).then(function(r) {
-      if (r.ok) loaded++; else failed++;
-    }).catch(function() {
-      failed++;
-    }).finally(function() {
-      if (loaded + failed >= count) {
+  function processBatch() {
+    var end = Math.min(index + batchSize, count);
+    var promises = [];
+    for (var i = index; i < end; i++) {
+      promises.push(
+        fetch(tiles[i]).then(function(r) {
+          if (r.ok) loaded++; else failed++;
+        }).catch(function() {
+          failed++;
+        })
+      );
+    }
+    index = end;
+    Promise.all(promises).then(function() {
+      status.textContent = 'Сохраняю ' + (loaded + failed) + '/' + count + (failed > 0 ? ' (' + failed + ' ошибок)' : '') + '...';
+      if (index < count) {
+        setTimeout(processBatch, 50);
+      } else {
         status.textContent = 'Сохранено: ' + loaded + ' тайлов' + (failed > 0 ? ' (' + failed + ' ошибок)' : '');
         status.style.color = '#2ecc71';
       }
     });
-  });
+  }
+
+  processBatch();
 });
 
 function latLngToTile(lat, lng, zoom) {
