@@ -309,6 +309,10 @@ function initMap() {
   map.on('locationerror', function() {
     locateAttempt++;
     if (locateAttempt === 1) {
+      var btn = document.getElementById('btn-locate');
+      btn.classList.remove('tracking');
+      btn.classList.add('tracking-wifi');
+      showToast('Нет сигнала GPS. Определение по Wi-Fi и сотовым вышкам');
       map.stopLocate();
       map.locate({ setView: true, maxZoom: 17, watch: true, enableHighAccuracy: false, timeout: 15000 });
     } else {
@@ -781,8 +785,15 @@ function stopLocating(btn) {
   if (locationMarker) { map.removeLayer(locationMarker); locationMarker = null; }
   if (locationCircle) { map.removeLayer(locationCircle); locationCircle = null; }
   isTracking = false;
-  btn.classList.remove('tracking');
+  btn.classList.remove('tracking', 'tracking-wifi');
   btn.textContent = '\u2316';
+}
+
+function showToast(msg) {
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 4000);
 }
 
 initMap();
