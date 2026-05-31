@@ -800,61 +800,91 @@ function showToast(msg) {
 
 document.getElementById('search-bar').classList.add('visible');
 
+var searchTimer = null;
+
 document.getElementById('search-input').addEventListener('input', function() {
-  var query = this.value.trim().toLowerCase();
+  var query = this.value.trim();
   var results = document.getElementById('search-results');
 
-  if (!query || query.length < 1) {
+  if (!query || query.length < 2) {
     results.classList.remove('has-results');
     results.innerHTML = '';
     return;
   }
 
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=' + encodeURIComponent(query) + '&accept-language=ru&limit=6');
+    xhr.setRequestHeader('User-Agent', 'FlyerMap-PWA/1.0');
+    xhr.onload = function() {
+      if (xhr.status !== 200) { showLocalResults(query); return; }
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (data.length === 0) { showLocalResults(query); return; }
+        var html = '';
+        data.forEach(function(item) {
+          var name = item.display_name.split(',')[0];
+          html += '<div class="search-result-item" onclick="focusSearchCoords(' + item.lat + ',' + item.lon + ')">';
+          html += '<span class="search-result-dot" style="background:#3498db"></span>';
+          html += '<span class="search-result-addr">' + name + '</span>';
+          html += '</div>';
+        });
+        results.innerHTML = html;
+        results.classList.add('has-results');
+      } catch (e) { showLocalResults(query); }
+    };
+    xhr.onerror = function() { showLocalResults(query); };
+    xhr.send();
+  }, 300);
+});
+
+function showLocalResults(query) {
+  var results = document.getElementById('search-results');
+  var q = query.toLowerCase();
   var dotClasses = {
     planned: 'dot-planned',
     active: 'dot-active',
     commented: 'dot-commented',
     excluded: 'dot-excluded'
   };
-
   var matched = buildings.filter(function(b) {
     var addr = (b.address || '').toLowerCase();
-    var idStr = 'дом #' + b.id;
-    return addr.indexOf(query) !== -1 || idStr.indexOf(query) !== -1;
-  }).slice(0, 8);
+    return addr.indexOf(q) !== -1 || ('дом #' + b.id).indexOf(q) !== -1;
+  }).slice(0, 5);
 
-  if (matched.length === 0) {
-    results.classList.remove('has-results');
-    results.innerHTML = '';
-    return;
-  }
-
+  if (matched.length === 0) { results.classList.remove('has-results'); results.innerHTML = ''; return; }
   var html = '';
   matched.forEach(function(b) {
     var status = getStatus(b);
-    var addr = b.address || 'Дом #' + b.id;
     html += '<div class="search-result-item" onclick="focusSearchResult(' + b.id + ')">';
     html += '<span class="search-result-dot ' + dotClasses[status] + '"></span>';
-    html += '<span class="search-result-addr">' + addr + '</span>';
-    if (b.comment) {
-      html += '<span class="search-result-comment">💬</span>';
-    }
+    html += '<span class="search-result-addr">' + (b.address || 'Дом #' + b.id) + '</span>';
+    if (b.comment) html += '<span class="search-result-comment">💬</span>';
     html += '</div>';
   });
-
   results.innerHTML = html;
   results.classList.add('has-results');
-});
+}
+
+window.focusSearchCoords = function(lat, lng) {
+  clearSearch();
+  map.setView([lat, lng], 17);
+};
 
 window.focusSearchResult = function(id) {
-  document.getElementById('search-results').classList.remove('has-results');
-  document.getElementById('search-results').innerHTML = '';
-  document.getElementById('search-input').value = '';
+  clearSearch();
   var marker = markers[id];
   if (!marker) return;
   map.setView(marker.getLatLng(), Math.max(map.getZoom(), 17));
   marker.openPopup();
 };
+
+function clearSearch() {
+  document.getElementById('search-results').classList.remove('has-results');
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-input').value = '';
+}
 
 document.addEventListener('click', function(e) {
   var bar = document.getElementById('search-bar');
