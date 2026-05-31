@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flyer-map-v35';
+const CACHE_NAME = 'flyer-map-v36';
 const TILE_CACHE = 'flyer-map-tiles-v1';
 
 function getBaseUrl() {

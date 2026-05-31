@@ -778,6 +778,7 @@ document.getElementById('btn-locate').addEventListener('click', function() {
   btn.classList.add('tracking');
   btn.textContent = '\u2715';
   isTracking = true;
+  document.getElementById('search-bar').classList.remove('visible');
 });
 
 function stopLocating(btn) {
@@ -787,6 +788,7 @@ function stopLocating(btn) {
   isTracking = false;
   btn.classList.remove('tracking', 'tracking-wifi');
   btn.textContent = '\u2316';
+  document.getElementById('search-bar').classList.add('visible');
 }
 
 function showToast(msg) {
@@ -795,5 +797,71 @@ function showToast(msg) {
   toast.classList.add('show');
   setTimeout(function() { toast.classList.remove('show'); }, 4000);
 }
+
+document.getElementById('search-bar').classList.add('visible');
+
+document.getElementById('search-input').addEventListener('input', function() {
+  var query = this.value.trim().toLowerCase();
+  var results = document.getElementById('search-results');
+
+  if (!query || query.length < 1) {
+    results.classList.remove('has-results');
+    results.innerHTML = '';
+    return;
+  }
+
+  var dotClasses = {
+    planned: 'dot-planned',
+    active: 'dot-active',
+    commented: 'dot-commented',
+    excluded: 'dot-excluded'
+  };
+
+  var matched = buildings.filter(function(b) {
+    var addr = (b.address || '').toLowerCase();
+    var idStr = 'дом #' + b.id;
+    return addr.indexOf(query) !== -1 || idStr.indexOf(query) !== -1;
+  }).slice(0, 8);
+
+  if (matched.length === 0) {
+    results.classList.remove('has-results');
+    results.innerHTML = '';
+    return;
+  }
+
+  var html = '';
+  matched.forEach(function(b) {
+    var status = getStatus(b);
+    var addr = b.address || 'Дом #' + b.id;
+    html += '<div class="search-result-item" onclick="focusSearchResult(' + b.id + ')">';
+    html += '<span class="search-result-dot ' + dotClasses[status] + '"></span>';
+    html += '<span class="search-result-addr">' + addr + '</span>';
+    if (b.comment) {
+      html += '<span class="search-result-comment">💬</span>';
+    }
+    html += '</div>';
+  });
+
+  results.innerHTML = html;
+  results.classList.add('has-results');
+});
+
+window.focusSearchResult = function(id) {
+  document.getElementById('search-results').classList.remove('has-results');
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-input').value = '';
+  var marker = markers[id];
+  if (!marker) return;
+  map.setView(marker.getLatLng(), Math.max(map.getZoom(), 17));
+  marker.openPopup();
+};
+
+document.addEventListener('click', function(e) {
+  var bar = document.getElementById('search-bar');
+  if (!bar.contains(e.target)) {
+    document.getElementById('search-results').classList.remove('has-results');
+    document.getElementById('search-results').innerHTML = '';
+  }
+});
 
 initMap();
