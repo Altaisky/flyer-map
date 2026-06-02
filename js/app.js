@@ -250,7 +250,7 @@ function updateStats() {
 function initMap() {
   var settings = loadSettings();
 
-  map = L.map('map', { center: settings.center, zoom: settings.zoom, zoomControl: false });
+  map = L.map('map', { center: settings.center, zoom: settings.zoom, zoomControl: false, rotate: true, touchRotate: true, bounceAtZoomLimits: false });
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   map.createPane('locationPane');
   map.getPane('locationPane').style.zIndex = 650;
