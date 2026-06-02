@@ -252,6 +252,8 @@ function initMap() {
 
   map = L.map('map', { center: settings.center, zoom: settings.zoom, zoomControl: false });
   L.control.zoom({ position: 'bottomright' }).addTo(map);
+  map.createPane('locationPane');
+  map.getPane('locationPane').style.zIndex = 650;
 
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, attribution: '&copy; OpenStreetMap'
@@ -302,8 +304,8 @@ function initMap() {
     if (locationMarker) map.removeLayer(locationMarker);
     if (locationCircle) map.removeLayer(locationCircle);
     var radius = e.accuracy / 2;
-    locationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: '#3498db', fillOpacity: 1, color: '#fff', weight: 3 });
-    locationCircle = L.circle(e.latlng, { radius: radius, color: '#3498db', fillColor: '#3498db', fillOpacity: 0.15, weight: 2 });
+    locationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: '#3498db', fillOpacity: 1, color: '#fff', weight: 3, pane: 'locationPane' });
+    locationCircle = L.circle(e.latlng, { radius: radius, color: '#3498db', fillColor: '#3498db', fillOpacity: 0.15, weight: 2, pane: 'locationPane' });
     if (isTracking) {
       locationMarker.addTo(map);
       locationCircle.addTo(map);
