@@ -16,6 +16,7 @@ let locationMarker = null;
 let locationCircle = null;
 let isTracking = false;
 let locateAttempt = 0;
+let initialViewSet = false;
 let tempMarker = null;
 let tempComment = null;
 
@@ -303,7 +304,14 @@ function initMap() {
     var radius = e.accuracy / 2;
     locationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: '#3498db', fillOpacity: 1, color: '#fff', weight: 3 });
     locationCircle = L.circle(e.latlng, { radius: radius, color: '#3498db', fillColor: '#3498db', fillOpacity: 0.15, weight: 2 });
-    if (isTracking) { locationMarker.addTo(map); locationCircle.addTo(map); }
+    if (isTracking) {
+      locationMarker.addTo(map);
+      locationCircle.addTo(map);
+      if (!initialViewSet) {
+        map.setView(e.latlng, 17);
+        initialViewSet = true;
+      }
+    }
   });
 
   map.on('locationerror', function() {
@@ -314,7 +322,7 @@ function initMap() {
       btn.classList.add('tracking-wifi');
       showToast('Нет сигнала GPS. Определение по Wi-Fi и сотовым вышкам');
       map.stopLocate();
-      map.locate({ setView: true, maxZoom: 17, watch: true, enableHighAccuracy: false, timeout: 15000 });
+      map.locate({ setView: false, maxZoom: 17, watch: true, enableHighAccuracy: false, timeout: 15000 });
     } else {
       alert('Не удалось определить местоположение ни по GPS, ни по Wi-Fi. Проверьте, включена ли геолокация в настройках телефона.');
       stopLocating(document.getElementById('btn-locate'));
@@ -774,7 +782,8 @@ document.getElementById('btn-locate').addEventListener('click', function() {
   if (isTracking) { stopLocating(btn); return; }
   if (!map) return;
   locateAttempt = 0;
-  map.locate({ setView: true, maxZoom: 17, watch: true, enableHighAccuracy: true });
+  initialViewSet = false;
+  map.locate({ setView: false, maxZoom: 17, watch: true, enableHighAccuracy: true });
   btn.classList.add('tracking');
   btn.textContent = '\u2715';
   isTracking = true;
