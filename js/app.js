@@ -70,15 +70,14 @@ function loadSettings() {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (raw) return JSON.parse(raw);
   } catch (e) {}
-  return { cooldownDays: DEFAULT_COOLDOWN, center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM, bearing: 0 };
+  return { cooldownDays: DEFAULT_COOLDOWN, center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM };
 }
 
 function saveSettings() {
   const settings = {
     cooldownDays: parseInt(document.getElementById('cooldown-days').value) || DEFAULT_COOLDOWN,
     center: map.getCenter(),
-    zoom: map.getZoom(),
-    bearing: map.getBearing() || 0
+    zoom: map.getZoom()
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
@@ -251,7 +250,7 @@ function updateStats() {
 function initMap() {
   var settings = loadSettings();
 
-  map = L.map('map', { center: settings.center, zoom: settings.zoom, zoomControl: false, rotate: true, touchRotate: true, bounceAtZoomLimits: false, bearing: settings.bearing || 0 });
+  map = L.map('map', { center: settings.center, zoom: settings.zoom, zoomControl: false, rotate: true, touchRotate: true, bounceAtZoomLimits: false });
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   map.createPane('locationPane');
   map.getPane('locationPane').style.zIndex = 650;
