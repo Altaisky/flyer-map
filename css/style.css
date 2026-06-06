@@ -538,17 +538,16 @@ input[type="number"]:focus {
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 
-.marker-pending { background: #3498db; }
-.marker-planned { background: #f39c12; }
-.marker-active { background: #2ecc71; }
-.marker-commented { background: #9b59b6; }
-.marker-expired { background: #f39c12; }
-.marker-excluded { background: #7f8c8d; }
+.marker-pending { background: rgba(52, 152, 219, 0.5); }
+.marker-planned { background: rgba(243, 156, 18, 0.5); }
+.marker-active { background: rgba(46, 204, 113, 0.5); }
+.marker-commented { background: rgba(155, 89, 182, 0.5); }
+.marker-expired { background: rgba(243, 156, 18, 0.5); }
+.marker-excluded { background: rgba(127, 140, 141, 0.5); }
 
 .marker-temp {
-  background: #a0a0c0 !important;
+  background: rgba(160, 160, 192, 0.5) !important;
   border: 3px dashed #fff !important;
-  opacity: 0.7;
 }
 
 .marker-has-comment::after {
