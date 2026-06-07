@@ -90,5 +90,5 @@ PWA на чистом HTML/CSS/JS + Leaflet + OpenStreetMap. Карта горо
 - ⚠ **НЕ использовать `...` в edit** — вставляется как литерал, ломает HTML
 - `blockMapClick` с авто-сбросом 100мс — от всплытия кликов попапа в карту
 - `tempComment` копируется в локальную переменную ДО `removeTempMarker()`
-- SW: `updateViaCache: 'none'`, кэш `flyer-map-v40` + `flyer-map-tiles-v1`
+- SW: `updateViaCache: 'none'`, кэш `flyer-map-v41` + `flyer-map-tiles-v1`
 - `setInterval(refreshAllMarkers, 60000)` — переход active→planned раз в минуту

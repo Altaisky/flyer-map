@@ -10,12 +10,13 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>Обклейка домов</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/style.css?v=40" />
+  <link rel="stylesheet" href="css/style.css?v=41" />
 </head>
 <body>
   <div id="toast"></div>
   <button id="sidebar-toggle">&#9776;</button>
   <button id="btn-locate" title="Моё местоположение">&#8982;</button>
+  <button id="btn-toggle-markers" title="Скрыть метки">&#128205;</button>
   <div id="search-bar">
     <input id="search-input" type="search" placeholder="Поиск дома..." autocomplete="off" />
     <div id="search-results"></div>
@@ -24,7 +25,7 @@
   <div id="sidebar">
     <div id="sidebar-header">
       <h1>📋 Обклейка домов</h1>
-      <span class="version">v40</span>
+      <span class="version">v41</span>
       <button id="sidebar-close">&times;</button>
     </div>
 
@@ -124,7 +125,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/app.js?v=40"></script>
+  <script src="js/app.js?v=41"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });

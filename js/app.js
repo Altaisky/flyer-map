@@ -19,6 +19,7 @@ let locateAttempt = 0;
 let initialViewSet = false;
 let tempMarker = null;
 let tempComment = null;
+let markersHidden = false;
 
 function reverseGeocode(lat, lng, callback) {
   const xhr = new XMLHttpRequest();
@@ -200,7 +201,8 @@ function getPopupContent(building) {
 
 function addMarkerToMap(building) {
   var status = getStatus(building);
-  var marker = L.marker([building.lat, building.lng], { icon: createMarkerIcon(status, !!building.comment || building.status === 'commented') }).addTo(map);
+  var marker = L.marker([building.lat, building.lng], { icon: createMarkerIcon(status, !!building.comment || building.status === 'commented') });
+  if (!markersHidden) marker.addTo(map);
   marker.bindPopup(function() { return getPopupContent(building); }, { maxWidth: 250 });
   markers[building.id] = marker;
 }
@@ -779,6 +781,23 @@ document.getElementById('sidebar-toggle').addEventListener('click', function() {
 document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
 document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
 
+document.getElementById('btn-toggle-markers').addEventListener('click', function() {
+  var btn = this;
+  markersHidden = !markersHidden;
+  if (markersHidden) {
+    btn.classList.add('hidden-state');
+    btn.title = 'Показать метки';
+    for (var id in markers) {
+      if (map.hasLayer(markers[id])) map.removeLayer(markers[id]);
+    }
+  } else {
+    btn.classList.remove('hidden-state');
+    btn.title = 'Скрыть метки';
+    buildings.forEach(function(b) { applyFilterToMarker(b); });
+    updateStats();
+  }
+});
+
 document.getElementById('btn-locate').addEventListener('click', function() {
   var btn = this;
   if (isTracking) { stopLocating(btn); return; }
@@ -791,7 +810,6 @@ document.getElementById('btn-locate').addEventListener('click', function() {
   isTracking = true;
   document.getElementById('search-bar').classList.remove('visible');
 });
-
 function stopLocating(btn) {
   map.stopLocate();
   if (locationMarker) { map.removeLayer(locationMarker); locationMarker = null; }

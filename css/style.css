@@ -14,7 +14,7 @@ body {
   overflow: hidden;
 }
 
-#sidebar-toggle, #btn-locate {
+  #sidebar-toggle, #btn-locate, #btn-toggle-markers {
   display: none;
   position: fixed;
   z-index: 1001;
@@ -44,6 +44,16 @@ body.sidebar-open #sidebar-toggle {
 #btn-locate {
   top: 12px;
   right: 12px;
+}
+
+#btn-toggle-markers {
+  bottom: 24px;
+  right: 12px;
+}
+
+#btn-toggle-markers.hidden-state {
+  background: #e94560ee;
+  color: #fff;
 }
 
 #btn-locate.tracking {
@@ -768,7 +778,7 @@ input[type="number"]:focus {
 }
 
 @media (max-width: 768px) {
-  #sidebar-toggle, #btn-locate {
+#sidebar-toggle, #btn-locate, #btn-toggle-markers {
     display: block;
   }
 
