@@ -48,7 +48,7 @@ body.sidebar-open #sidebar-toggle {
 
 #btn-toggle-markers {
   bottom: 24px;
-  right: 12px;
+  left: 64px;
 }
 
 #btn-toggle-markers.hidden-state {
